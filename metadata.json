@@ -1,0 +1,5 @@
+{
+  "name": "GitFolio AI",
+  "description": "An AI-powered GitHub portfolio showcase that generates project rationales and custom thumbnails using Gemini.",
+  "requestFramePermissions": []
+}
