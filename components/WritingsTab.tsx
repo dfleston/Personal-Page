@@ -35,7 +35,7 @@ export const WritingsTab: React.FC = () => {
       title: '',
       excerpt: '',
       cells: [
-        { id: '1', type: 'markdown', content: '# New Article\n\nStart writing here...' }
+        { id: '1', type: 'markdown', content: '# New Notebook\n\nStart writing here...' }
       ],
       publishedAt: '',
       readTime: '5 min read',
@@ -161,8 +161,8 @@ const NotebookEditor: React.FC<{
       id: Date.now().toString() + Math.random().toString().slice(2),
       type,
       content: type === 'jsx' 
-        ? "import React from 'react';\n\nconst Component = () => (\n  <div className='p-4 bg-slate-800 text-white rounded'>\n    Hello World\n  </div>\n);\n\nexport default Component;" 
-        : type === 'html' ? '<div>New HTML Cell</div>' : ''
+        ? "import React from 'react';\n\nconst App = () => {\n  return (\n    <div className='p-6 bg-slate-800 text-white rounded-lg'>\n      <h2 className='text-xl font-bold mb-2'>Hello World</h2>\n      <p>Edit this code to see changes instantly!</p>\n    </div>\n  );\n};\n\nexport default App;" 
+        : type === 'html' ? '<div class="p-4 bg-slate-800 rounded text-white">\n  <h3>HTML Cell</h3>\n</div>' : ''
     };
     const newCells = [...article.cells];
     newCells.splice(index + 1, 0, newCell);
@@ -193,30 +193,30 @@ const NotebookEditor: React.FC<{
   return (
     <div className="bg-gray-900 rounded-xl border border-gray-800 flex flex-col min-h-screen">
       {/* Meta Header */}
-      <div className="bg-gray-800 border-b border-gray-700 p-6 sticky top-0 z-20 backdrop-blur-md bg-gray-800/95">
-        <div className="flex justify-between items-start gap-6 max-w-5xl mx-auto w-full">
-            <div className="flex-1 space-y-4">
+      <div className="bg-gray-800 border-b border-gray-700 p-6 sticky top-0 z-20 backdrop-blur-md bg-gray-800/95 shadow-xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 max-w-5xl mx-auto w-full">
+            <div className="flex-1 space-y-2 w-full">
                 <input 
                     type="text" 
                     value={article.title}
                     onChange={e => setArticle({...article, title: e.target.value})}
-                    className="w-full bg-transparent text-3xl font-bold text-white placeholder-gray-600 focus:outline-none"
+                    className="w-full bg-transparent text-2xl md:text-3xl font-bold text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 rounded px-2 -ml-2 transition-all"
                     placeholder="Notebook Title"
                 />
                 <input 
                     type="text" 
                     value={article.excerpt}
                     onChange={e => setArticle({...article, excerpt: e.target.value})}
-                    className="w-full bg-transparent text-gray-400 placeholder-gray-600 focus:outline-none"
+                    className="w-full bg-transparent text-gray-400 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 rounded px-2 -ml-2 text-sm transition-all"
                     placeholder="Short description..."
                 />
             </div>
-            <div className="flex items-center gap-2">
-                <button onClick={onCancel} className="px-4 py-2 text-gray-400 hover:text-white">Cancel</button>
+            <div className="flex items-center gap-3 w-full md:w-auto">
+                <button onClick={onCancel} className="flex-1 md:flex-none px-4 py-2 text-gray-400 hover:text-white transition-colors bg-gray-700/50 rounded-lg hover:bg-gray-700">Cancel</button>
                 <button 
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-500/20"
+                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-500/20"
                 >
                     {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                     Save
@@ -226,7 +226,7 @@ const NotebookEditor: React.FC<{
       </div>
 
       {/* Cells */}
-      <div className="flex-1 p-6 md:p-10 max-w-5xl mx-auto w-full space-y-2">
+      <div className="flex-1 p-4 md:p-8 max-w-5xl mx-auto w-full space-y-4">
         {article.cells.map((cell, index) => (
           <React.Fragment key={cell.id}>
              <CellEditor 
@@ -285,11 +285,11 @@ const CellEditor: React.FC<{
   }, [cell.type, cell.content, onChange]);
 
   return (
-    <div className="group bg-gray-800 rounded-lg border border-gray-700 overflow-hidden shadow-sm hover:border-gray-500 transition-colors">
+    <div className="group bg-gray-800 rounded-lg border border-gray-700 overflow-hidden shadow-sm hover:border-gray-500 transition-all duration-200">
        {/* Cell Toolbar */}
-       <div className="bg-gray-850 border-b border-gray-700/50 p-2 flex items-center justify-between opacity-50 group-hover:opacity-100 transition-opacity">
-          <div className="flex items-center gap-2">
-             <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+       <div className="bg-gray-850 border-b border-gray-700/50 p-2 pl-4 flex items-center justify-between opacity-50 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-3">
+             <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded tracking-wider ${
                  cell.type === 'jsx' ? 'bg-violet-900/50 text-violet-300' : 
                  cell.type === 'html' ? 'bg-orange-900/50 text-orange-300' :
                  cell.type === 'image' ? 'bg-pink-900/50 text-pink-300' :
@@ -297,41 +297,52 @@ const CellEditor: React.FC<{
              }`}>
                 {cell.type}
              </span>
-             <button onClick={() => setPreview(!preview)} className={`p-1 rounded hover:bg-gray-700 ${preview ? 'text-emerald-400' : 'text-gray-400'}`} title="Toggle Preview">
-                <Eye size={14} />
+             <button 
+                onClick={() => setPreview(!preview)} 
+                className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium transition-colors ${preview ? 'bg-emerald-900/30 text-emerald-400' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`} 
+                title={preview ? "Edit" : "Preview"}
+             >
+                {preview ? <Edit3 size={12} /> : <Eye size={12} />}
+                {preview ? 'Edit' : 'Preview'}
              </button>
           </div>
           <div className="flex items-center gap-1">
-             <button onClick={onMoveUp} disabled={isFirst} className="p-1 text-gray-400 hover:text-white disabled:opacity-30"><MoveUp size={14} /></button>
-             <button onClick={onMoveDown} disabled={isLast} className="p-1 text-gray-400 hover:text-white disabled:opacity-30"><MoveDown size={14} /></button>
-             <button onClick={onDelete} className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded ml-2"><Trash2 size={14} /></button>
+             <button onClick={onMoveUp} disabled={isFirst} className="p-1.5 text-gray-400 hover:text-white disabled:opacity-30 hover:bg-gray-700 rounded"><MoveUp size={14} /></button>
+             <button onClick={onMoveDown} disabled={isLast} className="p-1.5 text-gray-400 hover:text-white disabled:opacity-30 hover:bg-gray-700 rounded"><MoveDown size={14} /></button>
+             <div className="w-px h-4 bg-gray-700 mx-1"></div>
+             <button onClick={onDelete} className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded transition-colors"><Trash2 size={14} /></button>
           </div>
        </div>
 
        {/* Content Area */}
        <div className="relative">
           {preview ? (
-              <div className="p-4 bg-gray-900 min-h-[100px] border-l-4 border-emerald-500/50">
+              <div className="p-6 bg-gray-900 min-h-[100px] border-l-4 border-emerald-500/50 animate-fade-in">
                   <CellRenderer cell={cell} />
               </div>
           ) : (
               cell.type === 'image' ? (
                   <div 
-                    className="p-8 text-center border-2 border-dashed border-gray-700 m-4 rounded-lg cursor-pointer hover:bg-gray-700/50"
+                    className="p-12 text-center border-2 border-dashed border-gray-700 m-4 rounded-lg cursor-pointer hover:bg-gray-700/30 hover:border-gray-500 transition-all"
                     onPaste={handleImagePaste}
                   >
                       {cell.content ? (
                           <div className="relative group/img inline-block">
-                              <img src={cell.content} alt="Cell" className="max-h-64 rounded-lg" />
-                              <button onClick={() => onChange('')} className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity"><X size={12} /></button>
+                              <img src={cell.content} alt="Cell" className="max-h-96 rounded-lg shadow-2xl" />
+                              <button onClick={() => onChange('')} className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-500 text-white p-2 rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"><X size={16} /></button>
                           </div>
                       ) : (
-                          <div className="text-gray-400">
-                             <ImageIcon size={32} className="mx-auto mb-2 opacity-50" />
-                             <p className="text-sm">Paste an image here (Ctrl+V)</p>
+                          <div className="text-gray-400 flex flex-col items-center gap-3">
+                             <div className="p-4 bg-gray-800 rounded-full">
+                                <ImageIcon size={32} className="opacity-50" />
+                             </div>
+                             <div>
+                                <p className="font-medium text-gray-300">Paste an image here</p>
+                                <p className="text-xs text-gray-500 mt-1">Ctrl+V / Cmd+V to insert from clipboard</p>
+                             </div>
                           </div>
                       )}
-                      {/* Hidden input to catch focus for paste events if needed */}
+                      {/* Hidden input to catch focus for paste events */}
                       <input className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" onPaste={handleImagePaste} />
                   </div>
               ) : (
@@ -339,8 +350,13 @@ const CellEditor: React.FC<{
                     value={cell.content}
                     onChange={(e) => onChange(e.target.value)}
                     onPaste={handleImagePaste}
-                    className={`w-full bg-gray-900 text-gray-300 p-4 font-mono text-sm focus:outline-none min-h-[150px] resize-y ${cell.type === 'markdown' ? 'font-sans' : 'font-mono'}`}
-                    placeholder={`Enter ${cell.type} content...`}
+                    className={`w-full bg-gray-900 text-gray-300 p-4 font-mono text-sm focus:outline-none min-h-[200px] resize-y ${cell.type === 'markdown' ? 'font-sans' : 'font-mono'}`}
+                    spellCheck={false}
+                    placeholder={
+                        cell.type === 'jsx' ? "// Write React code here. Must export default a component." : 
+                        cell.type === 'html' ? "<!-- HTML Content -->" : 
+                        "Markdown text..."
+                    }
                 />
               )
           )}
@@ -352,19 +368,19 @@ const CellEditor: React.FC<{
 const AddCellDivider: React.FC<{ onAdd: (type: ArticleCellType) => void; alwaysVisible?: boolean }> = ({ onAdd, alwaysVisible }) => {
   return (
     <div className={`relative py-4 flex items-center justify-center group ${alwaysVisible ? 'opacity-100' : 'opacity-0 hover:opacity-100'} transition-opacity`}>
-       <div className="absolute inset-x-0 h-px bg-emerald-500/30 group-hover:bg-emerald-500/50 transition-colors"></div>
-       <div className="relative z-10 flex gap-2">
-          <button onClick={() => onAdd('markdown')} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-full text-xs font-medium text-gray-300 hover:text-white hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 transition-all">
-             <Plus size={12} /> Text
+       <div className="absolute inset-x-0 h-px bg-emerald-500/20 group-hover:bg-emerald-500/40 transition-colors"></div>
+       <div className="relative z-10 flex gap-3">
+          <button onClick={() => onAdd('markdown')} className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-900 border border-gray-700 rounded-full text-xs font-bold text-gray-400 hover:text-white hover:border-emerald-500 hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">
+             <Plus size={14} className="text-emerald-500" /> Text
           </button>
-          <button onClick={() => onAdd('jsx')} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-full text-xs font-medium text-gray-300 hover:text-white hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/20 transition-all">
-             <Code size={12} /> React
+          <button onClick={() => onAdd('jsx')} className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-900 border border-gray-700 rounded-full text-xs font-bold text-gray-400 hover:text-white hover:border-violet-500 hover:shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all">
+             <Code size={14} className="text-violet-500" /> React
           </button>
-          <button onClick={() => onAdd('image')} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-full text-xs font-medium text-gray-300 hover:text-white hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20 transition-all">
-             <ImageIcon size={12} /> Image
+          <button onClick={() => onAdd('image')} className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-900 border border-gray-700 rounded-full text-xs font-bold text-gray-400 hover:text-white hover:border-pink-500 hover:shadow-[0_0_15px_rgba(236,72,153,0.3)] transition-all">
+             <ImageIcon size={14} className="text-pink-500" /> Image
           </button>
-          <button onClick={() => onAdd('html')} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-full text-xs font-medium text-gray-300 hover:text-white hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/20 transition-all">
-             <Box size={12} /> HTML
+          <button onClick={() => onAdd('html')} className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-900 border border-gray-700 rounded-full text-xs font-bold text-gray-400 hover:text-white hover:border-orange-500 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-all">
+             <Box size={14} className="text-orange-500" /> HTML
           </button>
        </div>
     </div>
@@ -375,18 +391,20 @@ const AddCellDivider: React.FC<{ onAdd: (type: ArticleCellType) => void; alwaysV
 
 const ArticleViewer: React.FC<{ article: Article }> = ({ article }) => {
   return (
-    <article className="max-w-5xl mx-auto space-y-8 pb-20">
-        <header className="text-center mb-12 border-b border-gray-800 pb-8">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">{article.title}</h1>
-            <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-400 font-mono">
-                <span className="flex items-center gap-2"><Calendar size={14}/> {article.publishedAt}</span>
-                <span className="flex items-center gap-2"><Clock size={14}/> {article.readTime}</span>
-                <div className="flex gap-2">
+    <article className="max-w-5xl mx-auto space-y-12 pb-20">
+        <header className="text-center mb-12 border-b border-gray-800 pb-12">
+            <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-8 tracking-tight leading-tight">{article.title}</h1>
+            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400 font-mono">
+                <span className="flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-full"><Calendar size={14} className="text-emerald-400"/> {article.publishedAt}</span>
+                <span className="flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-full"><Clock size={14} className="text-emerald-400"/> {article.readTime}</span>
+            </div>
+            {article.tags.length > 0 && (
+                <div className="flex flex-wrap justify-center gap-2 mt-6">
                     {article.tags.map(tag => (
-                        <span key={tag} className="text-emerald-400">#{tag}</span>
+                        <span key={tag} className="text-xs font-medium text-emerald-400 bg-emerald-950/30 border border-emerald-900/50 px-3 py-1 rounded-full uppercase tracking-wider">#{tag}</span>
                     ))}
                 </div>
-            </div>
+            )}
         </header>
 
         {article.cells.map(cell => (
@@ -422,14 +440,14 @@ const CellRenderer: React.FC<{ cell: ArticleCell }> = ({ cell }) => {
 
   if (cell.type === 'image') {
       return cell.content ? (
-          <div className="flex justify-center my-6">
-              <img src={cell.content} alt="User Content" className="rounded-xl shadow-lg max-h-[500px] border border-gray-700" />
+          <div className="flex justify-center my-8">
+              <img src={cell.content} alt="Content" className="rounded-xl shadow-2xl max-h-[600px] border border-gray-800" />
           </div>
       ) : null;
   }
 
   if (cell.type === 'html') {
-      return <div ref={contentRef} dangerouslySetInnerHTML={{ __html: cell.content }} />;
+      return <div ref={contentRef} className="w-full overflow-hidden" dangerouslySetInnerHTML={{ __html: cell.content }} />;
   }
 
   // Markdown
@@ -439,49 +457,63 @@ const CellRenderer: React.FC<{ cell: ArticleCell }> = ({ cell }) => {
 };
 
 const JSXRenderer: React.FC<{ code: string }> = ({ code }) => {
-    const generateSrcDoc = (userCode: string) => {
-        // Robust mounting logic
-        const mountScript = `
-          try {
-             // 1. Create a synthetic module scope
-             const module = { exports: {} };
-             const exports = module.exports;
-             
-             // 2. Wrap user code to capture exports
-             // We use a self-executing async function to allow top-level await if needed in modern environments,
-             // but mainly to contain scope.
-             // We inject 'React', 'useState', etc. into the scope.
-             
-             ${userCode}
+    // We clean the user code to remove imports/exports which cause syntax errors in the browser run
+    // unless using native modules (which have other limitations with inline content).
+    // Instead we explicitly provide the globals React, ReactDOM, Recharts.
+    const cleanUserCode = (rawCode: string) => {
+        let clean = rawCode
+            // Remove imports
+            .replace(/^import\s+.*?from\s+['"].*?['"];?/gm, '')
+            // Remove export default and just render
+            .replace(/^export\s+default\s+/gm, '');
+        return clean;
+    };
 
-             // 3. Find the Component
-             let App = module.exports.default || module.exports;
-             
-             // If user used "export default App", babel transforms it to exports.default
-             // If user just did "const App = ...", we can't easily catch it unless they export it.
-             // Fallback: Check window for global "App" if they attached it, though modules are strict.
-             
-             // If the default export is not a function/component, check if there is a named export 'App'
-             if (!App || (typeof App !== 'function' && typeof App !== 'object')) {
-                 if (exports.App) App = exports.App;
-             }
+    const generateSrcDoc = (rawCode: string) => {
+        const cleanedCode = cleanUserCode(rawCode);
+        // Escape backticks and ${} to prevent breaking the outer template literal
+        const safeCode = cleanedCode.replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+
+        // We try to find the component name if the user used "function App() {}"
+        // or just assume they defined a variable we can find.
+        const mountScript = `
+          // Globals are already loaded via script tags in head
+          const { useState, useEffect, useMemo, useRef, useCallback } = React;
+          const { 
+            LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie,
+            XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
+            ResponsiveContainer, Label, Cell 
+          } = window.Recharts;
+
+          try {
+             // Execute user code. It should define a component.
+             ${safeCode}
 
              const rootElement = document.getElementById('root');
              const root = ReactDOM.createRoot(rootElement);
+             
+             // Simple heuristic to find what to render
+             let ComponentToRender = null;
+             
+             // 1. Did they define 'App'?
+             if (typeof App !== 'undefined') ComponentToRender = App;
+             // 2. Did they define 'Chart'?
+             else if (typeof Chart !== 'undefined') ComponentToRender = Chart;
+             // 3. Did they define 'Component'?
+             else if (typeof Component !== 'undefined') ComponentToRender = Component;
 
-             if (App) {
-                root.render(React.createElement(App));
+             if (ComponentToRender) {
+                root.render(React.createElement(ComponentToRender));
              } else {
-                root.render(React.createElement('div', {style: {color: '#f87171', padding: 20}}, 
-                  "Error: No component exported. Please ensure you add 'export default ComponentName;' at the end of your code."
-                ));
+                root.render(
+                    React.createElement('div', {className: 'flex h-screen items-center justify-center text-red-400 bg-slate-900'}, 
+                        "Could not find a component to render. Please name your component 'App' or 'Chart'."
+                    )
+                );
              }
           } catch (err) {
-             const rootElement = document.getElementById('root');
-             if(rootElement) {
-                rootElement.innerHTML = '<div style="color: #f87171; padding: 20px; font-family: monospace;">Runtime Error: ' + err.message + '</div>';
-             }
              console.error(err);
+             document.body.innerHTML = '<div style="color: #f87171; padding: 20px; font-family: monospace; background: #0f172a; height: 100vh;">Runtime Error: ' + err.message + '</div>';
           }
         `;
 
@@ -497,35 +529,25 @@ const JSXRenderer: React.FC<{ code: string }> = ({ code }) => {
                 theme: { extend: { colors: { slate: { 800: '#1e293b', 900: '#0f172a' } } } }
             }
         </script>
-        <!-- Load dependencies as UMD globals for reliability in SrcDoc without importmaps issues -->
-        <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-        <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-        <script crossorigin src="https://unpkg.com/recharts@2.12.0/umd/Recharts.min.js"></script>
+        <!-- Load React & Recharts via reliable CDNs (Global UMD builds) -->
+        <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+        <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+        <!-- Prop Types is required for Recharts UMD -->
+        <script crossorigin src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
+        <script crossorigin src="https://cdn.jsdelivr.net/npm/recharts@2.12.0/umd/Recharts.min.js"></script>
         <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
         <style>
-          body { background-color: #0f172a; color: white; min-height: 100vh; margin: 0; padding: 0; overflow-x: hidden; }
-          #root { width: 100%; min-height: 100vh; display: flex; flex-direction: column; }
+          body { background-color: #0f172a; color: white; margin: 0; padding: 0; overflow-x: hidden; }
+          #root { width: 100%; min-height: 400px; }
+          /* Scrollbar */
+          ::-webkit-scrollbar { width: 6px; height: 6px; }
+          ::-webkit-scrollbar-track { background: #0f172a; }
+          ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
         </style>
       </head>
       <body>
         <div id="root"></div>
-        <script type="text/babel" data-presets="react">
-          // Expose Recharts globals so users can destructure them from 'recharts' or use window.Recharts
-          const { 
-            LineChart, Line, AreaChart, Area, BarChart, Bar, 
-            XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
-            ResponsiveContainer, Label 
-          } = window.Recharts;
-          
-          // Shim 'import' for the user code. 
-          // Since we are not using native modules (to access UMD globals easily), 
-          // we mock the import statements if the user wrote them.
-          // Note: Babel standalone strips imports in 'react' preset usually, but let's be safe.
-          // Actually, we rely on the user writing standard ES6. Babel standalone handles the syntax.
-          // The critical part is that "import React from 'react'" doesn't actually load anything in a script tag without type=module.
-          // So we rely on the globals being present.
-          
-          // EXECUTION
+        <script type="text/babel">
           ${mountScript}
         </script>
       </body>
@@ -534,11 +556,12 @@ const JSXRenderer: React.FC<{ code: string }> = ({ code }) => {
     }
 
     return (
-        <div className="w-full bg-gray-950 rounded-xl overflow-hidden border border-gray-800 shadow-2xl my-6">
+        <div className="w-full bg-gray-950 rounded-xl overflow-hidden border border-gray-800 shadow-2xl my-6 ring-1 ring-white/5">
              <iframe 
                 srcDoc={generateSrcDoc(code)}
                 className="w-full min-h-[500px] border-0 bg-transparent"
-                sandbox="allow-scripts allow-same-origin allow-popups"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                title="React Sandbox"
              />
         </div>
     );
