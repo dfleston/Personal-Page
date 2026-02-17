@@ -1,16 +1,17 @@
 import React, { useState, useCallback } from 'react';
-import { Search, Github, Loader2, Sparkles, FolderKanban, PenTool } from 'lucide-react';
+import { Search, Github, Loader2, Sparkles, FolderKanban, PenTool, MessageSquare } from 'lucide-react';
 import { GithubUser, GithubRepo } from './types';
 import { fetchGithubUser, fetchGithubRepos, extractUsername } from './services/githubService';
 import { generateRepoRationale, generateRepoThumbnail } from './services/geminiService';
 import { ProfileHeader } from './components/ProfileHeader';
 import { RepoCard } from './components/RepoCard';
+import { NostrTab } from './components/NostrTab';
 import { WritingsTab } from './components/WritingsTab';
 
 // Default NPub from env or fallback to test provided one
 const DEFAULT_NPUB = process.env.NOSTR_NPUB || 'npub1teprpsvpu8px6vqg4f4d7v5wz968yxkpw0yyr0q52m09ng48p2fq0h53xe';
 
-type Tab = 'projects' | 'writings';
+type Tab = 'projects' | 'nostr' | 'writings';
 
 const App: React.FC = () => {
   // State
@@ -178,10 +179,10 @@ const App: React.FC = () => {
 
           {/* Tab Navigation */}
           <main className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="flex items-center gap-6 mb-8 border-b border-gray-800">
+            <div className="flex items-center gap-6 mb-8 border-b border-gray-800 overflow-x-auto">
               <button
                 onClick={() => setActiveTab('projects')}
-                className={`flex items-center gap-2 pb-3 px-1 transition-all duration-300 ${
+                className={`flex items-center gap-2 pb-3 px-1 transition-all duration-300 whitespace-nowrap ${
                   activeTab === 'projects' 
                     ? 'text-cyan-400 border-b-2 border-cyan-400 font-medium' 
                     : 'text-gray-400 hover:text-white'
@@ -195,10 +196,22 @@ const App: React.FC = () => {
               </button>
 
               <button
-                onClick={() => setActiveTab('writings')}
-                className={`flex items-center gap-2 pb-3 px-1 transition-all duration-300 ${
-                  activeTab === 'writings' 
+                onClick={() => setActiveTab('nostr')}
+                className={`flex items-center gap-2 pb-3 px-1 transition-all duration-300 whitespace-nowrap ${
+                  activeTab === 'nostr' 
                     ? 'text-violet-400 border-b-2 border-violet-400 font-medium' 
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <MessageSquare size={18} />
+                Nostr
+              </button>
+
+              <button
+                onClick={() => setActiveTab('writings')}
+                className={`flex items-center gap-2 pb-3 px-1 transition-all duration-300 whitespace-nowrap ${
+                  activeTab === 'writings' 
+                    ? 'text-emerald-400 border-b-2 border-emerald-400 font-medium' 
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
@@ -239,13 +252,22 @@ const App: React.FC = () => {
                 </>
               )}
 
-              {activeTab === 'writings' && (
+              {activeTab === 'nostr' && (
                  <div className="animate-fade-in">
                    <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6">
                        Nostr Notes
                    </h2>
-                   <WritingsTab npub={DEFAULT_NPUB} />
+                   <NostrTab npub={DEFAULT_NPUB} />
                  </div>
+              )}
+
+              {activeTab === 'writings' && (
+                <div className="animate-fade-in">
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6">
+                      Long-form Articles
+                  </h2>
+                  <WritingsTab />
+                </div>
               )}
             </div>
           </main>

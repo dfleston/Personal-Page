@@ -48,6 +48,24 @@ export interface NostrNote {
   pubkey: string;
 }
 
+export type ArticleCellType = 'markdown' | 'html' | 'jsx' | 'image';
+
+export interface ArticleCell {
+  id: string;
+  type: ArticleCellType;
+  content: string; // Text content, code, or base64 image data
+}
+
+export interface Article {
+  id: string;
+  title: string;
+  excerpt: string;
+  cells: ArticleCell[]; // Replaces single 'content' and 'type'
+  publishedAt: string;
+  readTime: string;
+  tags: string[];
+}
+
 export enum AiActionType {
   ANALYZE_RATIONALE = 'ANALYZE_RATIONALE',
   GENERATE_THUMBNAIL = 'GENERATE_THUMBNAIL',
