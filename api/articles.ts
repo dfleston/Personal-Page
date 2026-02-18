@@ -1,7 +1,18 @@
 import { kv } from '@vercel/kv';
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import jwt from 'jsonwebtoken';
 
 const STORAGE_KEY = 'gitfolio_articles';
+
+async function verifyAuth(request: VercelRequest) {
+    const token = request.cookies.gitfolio_session;
+    if (!token) return null;
+    try {
+        return jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
+    } catch (e) {
+        return null;
+    }
+}
 
 export default async function handler(
     request: VercelRequest,
@@ -14,6 +25,11 @@ export default async function handler(
         }
 
         if (request.method === 'POST') {
+            const decoded = await verifyAuth(request);
+            if (!decoded || !decoded.isAdmin) {
+                return response.status(401).json({ error: 'Unauthorized: Admin login required' });
+            }
+
             const article = request.body;
 
             // Get current list

@@ -22,6 +22,29 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('projects');
   const [isDefaultUser, setIsDefaultUser] = useState(typeof process !== 'undefined' && !!process.env.GITHUB_USERNAME);
+  const [adminUser, setAdminUser] = useState<any>(null);
+
+  // Check auth on mount
+  React.useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated) {
+          setAdminUser(data.user);
+        }
+      })
+      .catch(err => console.error('Auth check failed', err));
+  }, []);
+
+  const handleLogin = () => {
+    window.location.href = '/api/auth/login';
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setAdminUser(null);
+    window.location.reload();
+  };
 
   const performSearch = useCallback(async (query: string) => {
     if (!query.trim()) return;
@@ -179,6 +202,27 @@ const App: React.FC = () => {
               />
             </form>
           )}
+
+          <div className="flex items-center gap-4 ml-4">
+            {adminUser ? (
+              <div className="flex items-center gap-3">
+                <div className="hidden sm:flex flex-col items-end">
+                  <span className="text-xs font-bold text-emerald-400">Admin</span>
+                  <span className="text-[10px] text-gray-500">{adminUser.login}</span>
+                </div>
+                <img src={adminUser.avatar} alt="Admin" className="w-8 h-8 rounded-full border border-emerald-500/50" />
+                <button onClick={handleLogout} className="text-xs text-gray-400 hover:text-white transition-colors">Logout</button>
+              </div>
+            ) : (
+              <button
+                onClick={handleLogin}
+                className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition-all border border-slate-700"
+              >
+                <Github size={14} />
+                Admin Login
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -278,7 +322,7 @@ const App: React.FC = () => {
                   <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6">
                     Long-form Articles
                   </h2>
-                  <WritingsTab />
+                  <WritingsTab isAdmin={!!adminUser?.isAdmin} />
                 </div>
               )}
             </div>
