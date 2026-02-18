@@ -2,7 +2,8 @@ import { GoogleGenAI } from "@google/genai";
 import { GithubRepo } from "../types";
 
 // Initialize the client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : '';
+const ai = new GoogleGenAI({ apiKey });
 
 const RATIONALE_MODEL = 'gemini-3-flash-preview';
 const THUMBNAIL_MODEL = 'gemini-2.5-flash-image';
@@ -30,9 +31,9 @@ export const generateRepoRationale = async (repo: GithubRepo): Promise<{ rationa
       contents: prompt,
     });
 
-    return { 
-      rationale: response.text?.trim() || "Could not generate rationale.", 
-      model: RATIONALE_MODEL 
+    return {
+      rationale: response.text?.trim() || "Could not generate rationale.",
+      model: RATIONALE_MODEL
     };
   } catch (error) {
     console.error("Gemini Rationale Error:", error);
@@ -63,7 +64,7 @@ export const generateRepoThumbnail = async (repo: GithubRepo): Promise<{ imageUr
     // Check for inline data (image)
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {
-        return { 
+        return {
           imageUrl: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`,
           model: THUMBNAIL_MODEL
         };
@@ -83,7 +84,7 @@ export const generateProfileSummary = async (username: string, repos: GithubRepo
   try {
     const topRepos = repos.slice(0, 5).map(r => `${r.name} (${r.language})`).join(', ');
     const languages = Array.from(new Set(repos.map(r => r.language).filter(Boolean))).join(', ');
-    
+
     const prompt = `
       Analyze this developer profile based on their top repositories: ${topRepos}
       and languages used: ${languages}.

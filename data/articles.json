@@ -1,0 +1,75 @@
+[
+    {
+        "id": "3",
+        "title": "Sostenibilidad Fiscal: Análisis Intereses vs Ingresos",
+        "excerpt": "Comparativa visual del impacto de los tipos de interés en las cuentas públicas de las principales potencias económicas.",
+        "cells": [
+            {
+                "id": "c1",
+                "type": "markdown",
+                "content": "# Deuda, Intereses y Sostenibilidad\n\nEste gráfico analiza qué porcentaje de los ingresos fiscales de cada región se destina únicamente a pagar los intereses de la deuda pública. Es un indicador clave de salud financiera a largo plazo."
+            },
+            {
+                "id": "c2",
+                "type": "jsx",
+                "height": 800,
+                "content": "import React, { useState } from 'react';\nimport { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';\n\n// Datos estimados para 2025-2026 basados en proyecciones del FMI y CBO\nconst fiscalData = [\n  {\n    region: 'EE. UU.',\n    intereses_ingresos: 16.5, // % de los ingresos fiscales destinados a pagar intereses\n    ingresos_gdp: 25.8,      // % total de ingresos fiscales sobre el PIB\n    coste_interes: 'Alto',\n    alerta: 'Presión por tipos altos'\n  },\n  {\n    region: 'Eurozona',\n    intereses_ingresos: 5.2,  // Media agregada (Alemania es bajo, Italia es alto)\n    ingresos_gdp: 46.2,      // Mayor presión fiscal que EE. UU.\n    coste_interes: 'Moderado',\n    alerta: 'Estabilidad fiscal'\n  },\n  {\n    region: 'China',\n    intereses_ingresos: 12.8, // Incluyendo estimaciones de deuda LGFV\n    ingresos_gdp: 20.5,      // Ingresos fiscales centrales relativamente bajos\n    coste_interes: 'Elevado',\n    alerta: 'Riesgo en gobiernos locales'\n  }\n];\n\nconst App = () => {\n  const CustomTooltip = ({ active, payload, label }) => {\n    if (active && payload && payload.length) {\n      return (\n        <div className=\"bg-slate-900 border border-slate-700 p-4 rounded-lg shadow-2xl\">\n          <p className=\"font-bold text-white mb-2 underline\">{label}</p>\n          <p className=\"text-sm text-amber-400\">\n            Intereses / Ingresos: <span className=\"font-bold\">{payload[0].value}%</span>\n          </p>\n          <p className=\"text-sm text-blue-400\">\n            Ingresos Fiscales / PIB: <span className=\"font-bold\">{payload[1].value}%</span>\n          </p>\n          <div className=\"mt-2 pt-2 border-t border-slate-700\">\n            <p className=\"text-[10px] text-slate-400 uppercase font-bold\">Estado:</p>\n            <p className=\"text-xs text-white\">{payload[0].payload.alerta}</p>\n          </div>\n        </div>\n      );\n    }\n    return null;\n  };\n\n  return (\n    <div className=\"min-h-screen bg-slate-950 text-slate-200 p-6 font-sans\">\n      <div className=\"max-w-6xl mx-auto\">\n        <header className=\"mb-10 text-center md:text-left\">\n          <h1 className=\"text-3xl font-extrabold text-white\">Sostenibilidad: Intereses vs Ingresos</h1>\n          <p className=\"text-slate-400 mt-2\">¿Qué porcentaje de lo que recauda el Estado se va directamente a pagar intereses?</p>\n        </header>\n\n        <div className=\"grid grid-cols-1 lg:grid-cols-4 gap-8\">\n          <div className=\"lg:col-span-3 bg-slate-900/50 p-6 rounded-3xl border border-slate-800 shadow-xl\">\n            <div className=\"h-[400px] w-full\">\n              <ResponsiveContainer width=\"100%\" height=\"100%\">\n                <ComposedChart data={fiscalData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>\n                  <CartesianGrid strokeDasharray=\"3 3\" stroke=\"#1e293b\" vertical={false} />\n                  <XAxis dataKey=\"region\" stroke=\"#94a3b8\" tick={{fill: '#fff'}} />\n                  <YAxis yAxisId=\"left\" stroke=\"#94a3b8\" tick={{fill: '#94a3b8'}} unit=\"%\" />\n                  <Tooltip content={<CustomTooltip />} />\n                  <Legend verticalAlign=\"top\" height={36}/>\n                  \n                  {/* Referencia de peligro histórico (15% es zona roja) */}\n                  <ReferenceLine yAxisId=\"left\" y={15} label={{ value: 'Zona de Peligro', position: 'right', fill: '#ef4444', fontSize: 10 }} stroke=\"#ef4444\" strokeDasharray=\"5 5\" />\n                  \n                  <Bar \n                    yAxisId=\"left\" \n                    dataKey=\"intereses_ingresos\" \n                    name=\"% Ingresos para Intereses\" \n                    fill=\"#f59e0b\" \n                    radius={[4, 4, 0, 0]} \n                    barSize={60}\n                  />\n                  <Line \n                    yAxisId=\"left\" \n                    type=\"monotone\" \n                    dataKey=\"ingresos_gdp\" \n                    name=\"% Ingresos Fiscales / PIB\" \n                    stroke=\"#3b82f6\" \n                    strokeWidth={4} \n                    dot={{ r: 6, fill: '#3b82f6' }}\n                  />\n                </ComposedChart>\n              </ResponsiveContainer>\n            </div>\n            <p className=\"mt-4 text-[11px] text-slate-500 italic text-center\">\n              Un valor de Intereses/Ingresos superior al 15% indica que la política fiscal está seriamente comprometida por el coste de la deuda.\n            </p>\n          </div>\n\n          <div className=\"space-y-4\">\n            <div className=\"p-4 bg-amber-900/20 border border-amber-500/30 rounded-xl\">\n              <h3 className=\"text-amber-400 font-bold text-sm mb-2\">El Problema de EE. UU.</h3>\n              <p className=\"text-xs text-slate-300\">\n                A pesar de ser la economía más fuerte, su baja recaudación relativa (25% del PIB) frente a una deuda creciente y tipos altos hace que los intereses consuman ya el **16.5%** de sus ingresos. Esto es \"dinero muerto\" que no vuelve a la economía.\n              </p>\n            </div>\n\n            <div className=\"p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl\">\n              <h3 className=\"text-blue-400 font-bold text-sm mb-2\">El \"Buffer\" de Europa</h3>\n              <p className=\"text-xs text-slate-300\">\n                Europa recauda muchísimo más (46% del PIB). Esto le da un margen de maniobra enorme: aunque deba dinero, tiene una capacidad de pago muy superior en relación con lo que gasta en intereses.\n              </p>\n            </div>\n\n            <div className=\"p-4 bg-red-900/20 border border-red-500/30 rounded-xl\">\n              <h3 className=\"text-red-400 font-bold text-sm mb-2\">China: Ingreso Invisible</h3>\n              <p className=\"text-xs text-slate-300\">\n                China tiene una recaudación central baja porque gran parte del dinero se queda en los gobiernos locales. Cuando estos deben pagar sus deudas, el ratio de intereses se dispara, drenando la inversión pública.\n              </p>\n            </div>\n          </div>\n        </div>\n\n        <div className=\"mt-8 p-6 bg-slate-900 border border-slate-800 rounded-2xl\">\n          <h2 className=\"text-xl font-bold mb-4 text-white\">Conclusión: ¿Por qué esto impulsa la Plata y el Oro?</h2>\n          <div className=\"grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-400\">\n            <p>\n              Cuando un país como **EE. UU. entra en la \"Zona de Peligro\" (más del 15% de ingresos para intereses)**, el mercado empieza a anticipar que la única solución será imprimir dinero para devaluar la deuda o bajar los tipos de interés de forma artificial (represión financiera).\n            </p>\n            <p>\n              Ambas soluciones son altamente **inflacionarias**. En este escenario, la plata y el oro dejan de ser \"especulación\" y se convierten en el único refugio para preservar el poder adquisitivo frente a un sistema fiscal que está dedicando más dinero a su pasado (deuda) que a su futuro (inversión).\n            </p>\n          </div>\n        </div>\n      </div>\n    </div>\n  );\n};\n\nexport default App;"
+            },
+            {
+                "id": "c3",
+                "type": "markdown",
+                "content": "### Key Takeaways\n\nThe gap between M2 and GDP growth has widened significantly in recent years. This metric is often used by macro-economists to gauge potential inflationary pressures in the asset markets."
+            }
+        ],
+        "publishedAt": "2025-06-10",
+        "readTime": "Interactive Chart",
+        "tags": [
+            "Economics",
+            "Recharts",
+            "React"
+        ]
+    },
+    {
+        "id": "1",
+        "title": "The Architecture of AI-First Applications",
+        "excerpt": "Exploring how Large Language Models are reshaping the fundamental structure of modern web applications.",
+        "cells": [
+            {
+                "id": "c1",
+                "type": "markdown",
+                "content": "# The Architecture of AI-First Applications\n\nIn the last decade, we built applications that *might* use AI. Today, we are building applications where AI is the *kernel*.\n\n## The Inversion of Control\n\nTraditionally, user interfaces were deterministic state machines. You click a button, a specific function runs, and the state updates. With LLMs, the \"function\" is often a probabilistic prompt that yields creative, unscripted results."
+            },
+            {
+                "id": "c2",
+                "type": "markdown",
+                "content": "### Key Components\n\n1. **The Context Window**: Think of this as your new RAM.\n2. **Streaming UI**: Latency is high, so perceived performance relies on streaming tokens.\n3. **RAG (Retrieval Augmented Generation)**: Grounding the model in your own data."
+            }
+        ],
+        "publishedAt": "2025-05-15",
+        "readTime": "5 min read",
+        "tags": [
+            "AI",
+            "Architecture",
+            "React"
+        ]
+    },
+    {
+        "id": "2",
+        "title": "Interactive Data: A Live Demo",
+        "excerpt": "A demonstration of embedding raw HTML, CSS, and JavaScript directly into the portfolio to create interactive visualizations.",
+        "cells": [
+            {
+                "id": "c1",
+                "type": "html",
+                "content": "<style>\n  .demo-container {\n    background: #0f172a;\n    border: 1px solid #334155;\n    border-radius: 12px;\n    padding: 20px;\n    text-align: center;\n    font-family: 'JetBrains Mono', monospace;\n  }\n  .orb {\n    width: 60px;\n    height: 60px;\n    background: radial-gradient(circle at 30% 30%, #22d3ee, #0891b2);\n    border-radius: 50%;\n    margin: 0 auto 20px;\n    box-shadow: 0 0 20px #22d3ee80;\n    transition: transform 0.1s;\n  }\n</style>\n<div class=\"demo-container\">\n  <h3>Interactive Physics Orb</h3>\n  <div class=\"orb\" id=\"orb\"></div>\n</div>\n<script>\n  (function() {\n     const orb = document.getElementById('orb');\n     let y = 0, dir = 1;\n     setInterval(() => {\n        y += dir;\n        if(y > 20 || y < -20) dir *= -1;\n        orb.style.transform = \"translateY(\" + y + \"px)\";\n     }, 30);\n  })();\n</script>"
+            }
+        ],
+        "publishedAt": "2025-06-02",
+        "readTime": "Interactive",
+        "tags": [
+            "Visualization",
+            "D3",
+            "Canvas"
+        ]
+    }
+]

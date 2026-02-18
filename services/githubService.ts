@@ -1,47 +1,86 @@
 import { GithubUser, GithubRepo } from '../types';
 
 const BASE_URL = 'https://api.github.com';
+const CACHE_KEY_PREFIX = 'gitfolio_cache_';
+const CACHE_TTL = 3600000; // 1 hour in ms
 
 export const extractUsername = (input: string): string => {
   const clean = input.trim();
-  // Regex to capture username from github.com/username
   const urlMatch = clean.match(/github\.com\/([^\/]+)/);
   if (urlMatch) return urlMatch[1];
-  
-  // Handle case where user might paste a full url without https or just the username
-  // If it looks like a URL but didn't match github, try to parse path
+
   try {
     if (clean.includes('/')) {
-        const parts = clean.split('/').filter(Boolean);
-        // last part if no github domain, or assume it is the username
-        return parts[parts.length - 1];
+      const parts = clean.split('/').filter(Boolean);
+      return parts[parts.length - 1];
     }
   } catch (e) {
-      // ignore
+    // ignore
   }
-  
+
   return clean;
+};
+
+const getCachedData = (key: string) => {
+  const cached = localStorage.getItem(CACHE_KEY_PREFIX + key);
+  if (!cached) return null;
+
+  try {
+    const { data, timestamp } = JSON.parse(cached);
+    if (Date.now() - timestamp < CACHE_TTL) {
+      return data;
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
+};
+
+const setCachedData = (key: string, data: any) => {
+  localStorage.setItem(CACHE_KEY_PREFIX + key, JSON.stringify({
+    data,
+    timestamp: Date.now()
+  }));
 };
 
 export const fetchGithubUser = async (username: string): Promise<GithubUser> => {
   const cleanUsername = extractUsername(username);
+
+  const cached = getCachedData(`user_${cleanUsername}`);
+  if (cached) return cached;
+
   const response = await fetch(`${BASE_URL}/users/${cleanUsername}`);
   if (!response.ok) {
     if (response.status === 404) throw new Error(`User "${cleanUsername}" not found`);
     throw new Error('Failed to fetch user');
   }
-  return response.json();
+  const data = await response.json();
+  setCachedData(`user_${cleanUsername}`, data);
+  return data;
 };
 
 export const fetchGithubRepos = async (username: string): Promise<GithubRepo[]> => {
   const cleanUsername = extractUsername(username);
-  // Fetch up to 100 repos sorted by updated time
+
+  const cached = getCachedData(`repos_${cleanUsername}`);
+  if (cached) return cached;
+
   const response = await fetch(`${BASE_URL}/users/${cleanUsername}/repos?sort=updated&per_page=100`);
   if (!response.ok) {
     throw new Error('Failed to fetch repositories');
   }
   const data = await response.json();
-  // Filter out forks to focus on original work, unless the user has very few repos
   const nonForks = data.filter((repo: GithubRepo) => !repo.fork);
-  return nonForks.length > 0 ? nonForks : data;
+  const result = nonForks.length > 0 ? nonForks : data;
+
+  setCachedData(`repos_${cleanUsername}`, result);
+  return result;
+};
+
+export const clearGithubCache = () => {
+  Object.keys(localStorage).forEach(key => {
+    if (key.startsWith(CACHE_KEY_PREFIX)) {
+      localStorage.removeItem(key);
+    }
+  });
 };
