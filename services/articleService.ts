@@ -3,113 +3,156 @@ import { Article } from '../types';
 let MOCK_ARTICLES: Article[] = [
   {
     id: '3',
-    title: 'Global Money Supply vs GDP Analysis',
-    excerpt: 'An interactive analysis of M2 Money Supply correlation with Real GDP across major economic zones (USA, Eurozone, China) over the last century.',
+    title: 'Sostenibilidad Fiscal: Análisis Intereses vs Ingresos',
+    excerpt: 'Comparativa visual del impacto de los tipos de interés en las cuentas públicas de las principales potencias económicas.',
     cells: [
       {
         id: 'c1',
         type: 'markdown',
-        content: '# Global Economic Indicators\n\nThis chart visualizes the correlation between **M2 Money Supply** and **Real GDP** over the last 100 years. Notice the divergence patterns during major economic crises.'
+        content: '# Deuda, Intereses y Sostenibilidad\n\nEste gráfico analiza qué porcentaje de los ingresos fiscales de cada región se destina únicamente a pagar los intereses de la deuda pública. Es un indicador clave de salud financiera a largo plazo.'
       },
       {
         id: 'c2',
         type: 'jsx',
-        content: `import React, { useState, useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } from 'recharts';
+        height: 800,
+        content: `import React, { useState } from 'react';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 
-// Historical estimates based on FRED (USA), World Bank/NBS (China) and ECB
-const data = [
-  { year: 1925, us_m2: 0.8, us_gdp: 1.1, eu_m2: null, eu_gdp: 0.9, cn_m2: null, cn_gdp: null },
-  { year: 1930, us_m2: 0.9, us_gdp: 1.2, eu_m2: null, eu_gdp: 1.0, cn_m2: null, cn_gdp: null },
-  { year: 1940, us_m2: 1.5, us_gdp: 1.6, eu_m2: null, eu_gdp: 0.8, cn_m2: null, cn_gdp: null },
-  { year: 1950, us_m2: 2.8, us_gdp: 2.5, eu_m2: 1.2, eu_gdp: 1.5, cn_m2: null, cn_gdp: 0.2 },
-  { year: 1960, us_m2: 3.5, us_gdp: 3.8, eu_m2: 2.0, eu_gdp: 2.8, cn_m2: null, cn_gdp: 0.3 },
-  { year: 1970, us_m2: 5.2, us_gdp: 5.5, eu_m2: 3.5, eu_gdp: 4.5, cn_m2: null, cn_gdp: 0.4 },
-  { year: 1980, us_m2: 6.8, us_gdp: 7.8, eu_m2: 5.8, eu_gdp: 7.2, cn_m2: 0.2, cn_gdp: 0.6 },
-  { year: 1990, us_m2: 8.5, us_gdp: 10.2, eu_m2: 8.2, eu_gdp: 9.8, cn_m2: 0.8, cn_gdp: 1.2 },
-  { year: 2000, us_m2: 11.2, us_gdp: 13.5, eu_m2: 10.5, eu_gdp: 12.5, cn_m2: 3.5, cn_gdp: 3.8 },
-  { year: 2010, us_m2: 16.5, us_gdp: 16.8, eu_m2: 14.8, eu_gdp: 14.2, cn_m2: 12.5, cn_gdp: 10.5 },
-  { year: 2015, us_m2: 19.8, us_gdp: 18.5, eu_m2: 16.5, eu_gdp: 15.5, cn_m2: 18.2, cn_gdp: 14.2 },
-  { year: 2020, us_m2: 25.4, us_gdp: 20.2, eu_m2: 20.2, eu_gdp: 16.8, cn_m2: 26.5, cn_gdp: 18.5 },
-  { year: 2024, us_m2: 24.8, us_gdp: 22.5, eu_m2: 21.5, eu_gdp: 18.2, cn_m2: 32.4, cn_gdp: 21.8 },
-  { year: 2026, us_m2: 25.1, us_gdp: 23.8, eu_m2: 22.8, eu_gdp: 19.5, cn_m2: 35.2, cn_gdp: 23.5 },
+// Datos estimados para 2025-2026 basados en proyecciones del FMI y CBO
+const fiscalData = [
+  {
+    region: 'EE. UU.',
+    intereses_ingresos: 16.5, // % de los ingresos fiscales destinados a pagar intereses
+    ingresos_gdp: 25.8,      // % total de ingresos fiscales sobre el PIB
+    coste_interes: 'Alto',
+    alerta: 'Presión por tipos altos'
+  },
+  {
+    region: 'Eurozona',
+    intereses_ingresos: 5.2,  // Media agregada (Alemania es bajo, Italia es alto)
+    ingresos_gdp: 46.2,      // Mayor presión fiscal que EE. UU.
+    coste_interes: 'Moderado',
+    alerta: 'Estabilidad fiscal'
+  },
+  {
+    region: 'China',
+    intereses_ingresos: 12.8, // Incluyendo estimaciones de deuda LGFV
+    ingresos_gdp: 20.5,      // Ingresos fiscales centrales relativamente bajos
+    coste_interes: 'Elevado',
+    alerta: 'Riesgo en gobiernos locales'
+  }
 ];
 
-const Chart = () => {
-  const [region, setRegion] = useState('us');
-  const [logScale, setLogScale] = useState(false);
-
-  const regionInfo = {
-    us: { name: 'United States', m2Key: 'us_m2', gdpKey: 'us_gdp', colorM2: '#3b82f6', colorGDP: '#10b981' },
-    eu: { name: 'Eurozone', m2Key: 'eu_m2', gdpKey: 'eu_gdp', colorM2: '#8b5cf6', colorGDP: '#f59e0b' },
-    cn: { name: 'China', m2Key: 'cn_m2', gdpKey: 'cn_gdp', colorM2: '#ef4444', colorGDP: '#ec4899' },
+const App = () => {
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-slate-900 border border-slate-700 p-4 rounded-lg shadow-2xl">
+          <p className="font-bold text-white mb-2 underline">{label}</p>
+          <p className="text-sm text-amber-400">
+            Intereses / Ingresos: <span className="font-bold">{payload[0].value}%</span>
+          </p>
+          <p className="text-sm text-blue-400">
+            Ingresos Fiscales / PIB: <span className="font-bold">{payload[1].value}%</span>
+          </p>
+          <div className="mt-2 pt-2 border-t border-slate-700">
+            <p className="text-[10px] text-slate-400 uppercase font-bold">Estado:</p>
+            <p className="text-xs text-white">{payload[0].payload.alerta}</p>
+          </div>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
-    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg text-slate-100 font-sans">
-      <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
-        <div className="flex bg-slate-700 p-1 rounded-lg">
-          {Object.entries(regionInfo).map(([key, info]) => (
-            <button
-              key={key}
-              onClick={() => setRegion(key)}
-              style={{
-                 backgroundColor: region === key ? '#4f46e5' : 'transparent',
-                 color: region === key ? 'white' : '#cbd5e1',
-              }}
-              className="px-4 py-2 rounded-md transition-all font-medium"
-            >
-              {info.name}
-            </button>
-          ))}
-        </div>
-        
-        <button 
-          onClick={() => setLogScale(!logScale)}
-          className="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-sm transition-colors"
-        >
-          {logScale ? 'Log Scale: ON' : 'Log Scale: OFF'}
-        </button>
-      </div>
+    <div className="min-h-screen bg-slate-950 text-slate-200 p-6 font-sans">
+      <div className="max-w-6xl mx-auto">
+        <header className="mb-10 text-center md:text-left">
+          <h1 className="text-3xl font-extrabold text-white">Sostenibilidad: Intereses vs Ingresos</h1>
+          <p className="text-slate-400 mt-2">¿Qué porcentaje de lo que recauda el Estado se va directamente a pagar intereses?</p>
+        </header>
 
-      <div style={{ height: 400, width: '100%' }}>
-        <ResponsiveContainer>
-          <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-            <XAxis dataKey="year" stroke="#94a3b8" />
-            <YAxis 
-              scale={logScale ? 'log' : 'auto'} 
-              domain={logScale ? ['auto', 'auto'] : [0, 'auto']}
-              stroke="#94a3b8"
-            />
-            <Tooltip 
-                contentStyle={{ backgroundColor: '#1e293b', borderColor: '#475569', color: '#f8fafc' }}
-            />
-            <Legend verticalAlign="top" height={36} />
-            <Line 
-              type="monotone" 
-              dataKey={regionInfo[region].m2Key} 
-              name="M2 Supply" 
-              stroke={regionInfo[region].colorM2} 
-              strokeWidth={3}
-              dot={{ r: 4 }}
-            />
-            <Line 
-              type="monotone" 
-              dataKey={regionInfo[region].gdpKey} 
-              name="Real GDP" 
-              stroke={regionInfo[region].colorGDP} 
-              strokeWidth={3}
-              dot={{ r: 4 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-3 bg-slate-900/50 p-6 rounded-3xl border border-slate-800 shadow-xl">
+            <div className="h-[400px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={fiscalData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                  <XAxis dataKey="region" stroke="#94a3b8" tick={{fill: '#fff'}} />
+                  <YAxis yAxisId="left" stroke="#94a3b8" tick={{fill: '#94a3b8'}} unit="%" />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend verticalAlign="top" height={36}/>
+                  
+                  {/* Referencia de peligro histórico (15% es zona roja) */}
+                  <ReferenceLine yAxisId="left" y={15} label={{ value: 'Zona de Peligro', position: 'right', fill: '#ef4444', fontSize: 10 }} stroke="#ef4444" strokeDasharray="5 5" />
+                  
+                  <Bar 
+                    yAxisId="left" 
+                    dataKey="intereses_ingresos" 
+                    name="% Ingresos para Intereses" 
+                    fill="#f59e0b" 
+                    radius={[4, 4, 0, 0]} 
+                    barSize={60}
+                  />
+                  <Line 
+                    yAxisId="left" 
+                    type="monotone" 
+                    dataKey="ingresos_gdp" 
+                    name="% Ingresos Fiscales / PIB" 
+                    stroke="#3b82f6" 
+                    strokeWidth={4} 
+                    dot={{ r: 6, fill: '#3b82f6' }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="mt-4 text-[11px] text-slate-500 italic text-center">
+              Un valor de Intereses/Ingresos superior al 15% indica que la política fiscal está seriamente comprometida por el coste de la deuda.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="p-4 bg-amber-900/20 border border-amber-500/30 rounded-xl">
+              <h3 className="text-amber-400 font-bold text-sm mb-2">El Problema de EE. UU.</h3>
+              <p className="text-xs text-slate-300">
+                A pesar de ser la economía más fuerte, su baja recaudación relativa (25% del PIB) frente a una deuda creciente y tipos altos hace que los intereses consuman ya el **16.5%** de sus ingresos. Esto es "dinero muerto" que no vuelve a la economía.
+              </p>
+            </div>
+
+            <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl">
+              <h3 className="text-blue-400 font-bold text-sm mb-2">El "Buffer" de Europa</h3>
+              <p className="text-xs text-slate-300">
+                Europa recauda muchísimo más (46% del PIB). Esto le da un margen de maniobra enorme: aunque deba dinero, tiene una capacidad de pago muy superior en relación con lo que gasta en intereses.
+              </p>
+            </div>
+
+            <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-xl">
+              <h3 className="text-red-400 font-bold text-sm mb-2">China: Ingreso Invisible</h3>
+              <p className="text-xs text-slate-300">
+                China tiene una recaudación central baja porque gran parte del dinero se queda en los gobiernos locales. Cuando estos deben pagar sus deudas, el ratio de intereses se dispara, drenando la inversión pública.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 p-6 bg-slate-900 border border-slate-800 rounded-2xl">
+          <h2 className="text-xl font-bold mb-4 text-white">Conclusión: ¿Por qué esto impulsa la Plata y el Oro?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-400">
+            <p>
+              Cuando un país como **EE. UU. entra en la "Zona de Peligro" (más del 15% de ingresos para intereses)**, el mercado empieza a anticipar que la única solución será imprimir dinero para devaluar la deuda o bajar los tipos de interés de forma artificial (represión financiera).
+            </p>
+            <p>
+              Ambas soluciones son altamente **inflacionarias**. En este escenario, la plata y el oro dejan de ser "especulación" y se convierten en el único refugio para preservar el poder adquisitivo frente a un sistema fiscal que está dedicando más dinero a su pasado (deuda) que a su futuro (inversión).
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-export default Chart;`
+export default App;`
       },
       {
         id: 'c3',

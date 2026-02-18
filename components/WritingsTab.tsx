@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { fetchArticles, saveArticle } from '../services/articleService';
 import { Article, ArticleCell, ArticleCellType } from '../types';
-import { Loader2, Calendar, Clock, ArrowLeft, Tag, Plus, Edit3, Save, Eye, Code, X, MoveUp, MoveDown, Trash2, Image as ImageIcon, Box } from 'lucide-react';
+import { Loader2, Calendar, Clock, ArrowLeft, Tag, Plus, Edit3, Save, Eye, Code, X, MoveUp, MoveDown, Trash2, Image as ImageIcon, Box, AlertTriangle, RefreshCw, GripHorizontal } from 'lucide-react';
 import { marked } from 'marked';
 
 // --- Main Tab Component ---
@@ -149,10 +149,11 @@ const NotebookEditor: React.FC<{
   const [article, setArticle] = useState<Article>({ ...initialArticle });
   const [isSaving, setIsSaving] = useState(false);
 
-  const updateCell = (id: string, content: string) => {
+  // Update cell now accepts Partial<ArticleCell> to handle both content and height updates
+  const updateCell = (id: string, updates: Partial<ArticleCell>) => {
     setArticle(prev => ({
       ...prev,
-      cells: prev.cells.map(c => c.id === id ? { ...c, content } : c)
+      cells: prev.cells.map(c => c.id === id ? { ...c, ...updates } : c)
     }));
   };
 
@@ -231,7 +232,7 @@ const NotebookEditor: React.FC<{
           <React.Fragment key={cell.id}>
              <CellEditor 
                 cell={cell} 
-                onChange={(content) => updateCell(cell.id, content)}
+                onChange={(updates) => updateCell(cell.id, updates)}
                 onDelete={() => removeCell(cell.id)}
                 onMoveUp={() => moveCell(index, 'up')}
                 onMoveDown={() => moveCell(index, 'down')}
@@ -251,7 +252,7 @@ const NotebookEditor: React.FC<{
 
 const CellEditor: React.FC<{
   cell: ArticleCell;
-  onChange: (content: string) => void;
+  onChange: (updates: Partial<ArticleCell>) => void;
   onDelete: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -274,9 +275,9 @@ const CellEditor: React.FC<{
                     const cursor = (e.target as HTMLTextAreaElement).selectionStart;
                     const text = cell.content;
                     const newText = text.slice(0, cursor) + `\n![Image](${base64})\n` + text.slice(cursor);
-                    onChange(newText);
+                    onChange({ content: newText });
                 } else if (cell.type === 'image') {
-                    onChange(base64);
+                    onChange({ content: base64 });
                 }
             };
             if (blob) reader.readAsDataURL(blob);
@@ -318,7 +319,10 @@ const CellEditor: React.FC<{
        <div className="relative">
           {preview ? (
               <div className="p-6 bg-gray-900 min-h-[100px] border-l-4 border-emerald-500/50 animate-fade-in">
-                  <CellRenderer cell={cell} />
+                  <CellRenderer 
+                    cell={cell} 
+                    onHeightChange={(h) => onChange({ height: h })}
+                  />
               </div>
           ) : (
               cell.type === 'image' ? (
@@ -329,7 +333,7 @@ const CellEditor: React.FC<{
                       {cell.content ? (
                           <div className="relative group/img inline-block">
                               <img src={cell.content} alt="Cell" className="max-h-96 rounded-lg shadow-2xl" />
-                              <button onClick={() => onChange('')} className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-500 text-white p-2 rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"><X size={16} /></button>
+                              <button onClick={() => onChange({ content: '' })} className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-500 text-white p-2 rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"><X size={16} /></button>
                           </div>
                       ) : (
                           <div className="text-gray-400 flex flex-col items-center gap-3">
@@ -348,7 +352,7 @@ const CellEditor: React.FC<{
               ) : (
                 <textarea 
                     value={cell.content}
-                    onChange={(e) => onChange(e.target.value)}
+                    onChange={(e) => onChange({ content: e.target.value })}
                     onPaste={handleImagePaste}
                     className={`w-full bg-gray-900 text-gray-300 p-4 font-mono text-sm focus:outline-none min-h-[200px] resize-y ${cell.type === 'markdown' ? 'font-sans' : 'font-mono'}`}
                     spellCheck={false}
@@ -416,7 +420,7 @@ const ArticleViewer: React.FC<{ article: Article }> = ({ article }) => {
   );
 };
 
-const CellRenderer: React.FC<{ cell: ArticleCell }> = ({ cell }) => {
+const CellRenderer: React.FC<{ cell: ArticleCell; onHeightChange?: (h: number) => void }> = ({ cell, onHeightChange }) => {
   const contentRef = useRef<HTMLDivElement>(null);
 
   // HTML Script Execution
@@ -435,7 +439,13 @@ const CellRenderer: React.FC<{ cell: ArticleCell }> = ({ cell }) => {
   }, [cell.content, cell.type]);
 
   if (cell.type === 'jsx') {
-      return <JSXRenderer code={cell.content} />;
+      return (
+        <JSXRenderer 
+          code={cell.content} 
+          height={cell.height} 
+          onHeightChange={onHeightChange} 
+        />
+      );
   }
 
   if (cell.type === 'image') {
@@ -456,113 +466,139 @@ const CellRenderer: React.FC<{ cell: ArticleCell }> = ({ cell }) => {
   );
 };
 
-const JSXRenderer: React.FC<{ code: string }> = ({ code }) => {
-    // We clean the user code to remove imports/exports which cause syntax errors in the browser run
-    // unless using native modules (which have other limitations with inline content).
-    // Instead we explicitly provide the globals React, ReactDOM, Recharts.
+const JSXRenderer: React.FC<{ code: string; height?: number; onHeightChange?: (h: number) => void }> = ({ code, height, onHeightChange }) => {
+    const [key, setKey] = useState(0);
+    
+    // Default to 500 if not set. Use controlled height if provided, otherwise internal default.
+    const currentHeight = height || 500;
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        e.preventDefault();
+        const startY = e.clientY;
+        const startHeight = currentHeight;
+
+        const handleMouseMove = (moveEvent: MouseEvent) => {
+            const newHeight = Math.max(200, startHeight + (moveEvent.clientY - startY));
+            if (onHeightChange) {
+                onHeightChange(newHeight);
+            }
+        };
+
+        const handleMouseUp = () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    // Clean code to remove imports/exports which break the browser script environment
     const cleanUserCode = (rawCode: string) => {
         let clean = rawCode
-            // Remove imports
             .replace(/^import\s+.*?from\s+['"].*?['"];?/gm, '')
-            // Remove export default and just render
             .replace(/^export\s+default\s+/gm, '');
         return clean;
     };
 
     const generateSrcDoc = (rawCode: string) => {
         const cleanedCode = cleanUserCode(rawCode);
-        // Escape backticks and ${} to prevent breaking the outer template literal
-        const safeCode = cleanedCode.replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+        const safeCode = cleanedCode.replace(/<\/script>/gi, '<\\/script>');
 
-        // We try to find the component name if the user used "function App() {}"
-        // or just assume they defined a variable we can find.
-        const mountScript = `
-          // Globals are already loaded via script tags in head
-          const { useState, useEffect, useMemo, useRef, useCallback } = React;
-          const { 
-            LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie,
-            XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
-            ResponsiveContainer, Label, Cell 
-          } = window.Recharts;
+        const preamble = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { slate: { 800: '#1e293b', 900: '#0f172a' } } } }
+    }
+  </script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/recharts@2.12.0/umd/Recharts.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { background-color: #0f172a; color: white; margin: 0; padding: 0; overflow-x: hidden; }
+    #root { width: 100%; min-height: 100%; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef, useCallback } = React;
+    
+    // Expose ALL Recharts components to global scope to handle any import
+    Object.keys(Recharts).forEach(key => {
+        window[key] = Recharts[key];
+    });
 
-          try {
-             // Execute user code. It should define a component.
-             ${safeCode}
+`;
 
-             const rootElement = document.getElementById('root');
-             const root = ReactDOM.createRoot(rootElement);
-             
-             // Simple heuristic to find what to render
-             let ComponentToRender = null;
-             
-             // 1. Did they define 'App'?
-             if (typeof App !== 'undefined') ComponentToRender = App;
-             // 2. Did they define 'Chart'?
-             else if (typeof Chart !== 'undefined') ComponentToRender = Chart;
-             // 3. Did they define 'Component'?
-             else if (typeof Component !== 'undefined') ComponentToRender = Component;
+        const postamble = `
+    
+    const rootElement = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElement);
 
-             if (ComponentToRender) {
-                root.render(React.createElement(ComponentToRender));
-             } else {
-                root.render(
-                    React.createElement('div', {className: 'flex h-screen items-center justify-center text-red-400 bg-slate-900'}, 
-                        "Could not find a component to render. Please name your component 'App' or 'Chart'."
-                    )
-                );
-             }
-          } catch (err) {
-             console.error(err);
-             document.body.innerHTML = '<div style="color: #f87171; padding: 20px; font-family: monospace; background: #0f172a; height: 100vh;">Runtime Error: ' + err.message + '</div>';
-          }
-        `;
+    // Heuristic to find the component
+    let ComponentToRender = null;
+    if (typeof App !== 'undefined') ComponentToRender = App;
+    else if (typeof Chart !== 'undefined') ComponentToRender = Chart;
+    else if (typeof Component !== 'undefined') ComponentToRender = Component;
 
-        return `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script>
-            tailwind.config = {
-                theme: { extend: { colors: { slate: { 800: '#1e293b', 900: '#0f172a' } } } }
-            }
-        </script>
-        <!-- Load React & Recharts via reliable CDNs (Global UMD builds) -->
-        <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
-        <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-        <!-- Prop Types is required for Recharts UMD -->
-        <script crossorigin src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
-        <script crossorigin src="https://cdn.jsdelivr.net/npm/recharts@2.12.0/umd/Recharts.min.js"></script>
-        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-        <style>
-          body { background-color: #0f172a; color: white; margin: 0; padding: 0; overflow-x: hidden; }
-          #root { width: 100%; min-height: 400px; }
-          /* Scrollbar */
-          ::-webkit-scrollbar { width: 6px; height: 6px; }
-          ::-webkit-scrollbar-track { background: #0f172a; }
-          ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        </style>
-      </head>
-      <body>
-        <div id="root"></div>
-        <script type="text/babel">
-          ${mountScript}
-        </script>
-      </body>
-      </html>
-        `;
+    if (ComponentToRender) {
+      root.render(<ComponentToRender />);
+    } else {
+      root.render(
+        <div className="flex h-screen items-center justify-center text-red-400 bg-slate-900 p-4 text-center">
+          Component not found. Please define 'App' or 'Chart'.
+        </div>
+      );
+    }
+  </script>
+</body>
+</html>
+`;
+        
+        return preamble + safeCode + postamble;
     }
 
     return (
-        <div className="w-full bg-gray-950 rounded-xl overflow-hidden border border-gray-800 shadow-2xl my-6 ring-1 ring-white/5">
+        <div className="w-full bg-[#1e1e1e] rounded-xl overflow-hidden border border-gray-700 shadow-xl my-6 flex flex-col relative transition-all duration-300 group/frame" style={{ height: currentHeight }}>
+             <div className="absolute top-2 right-2 z-10">
+                 <button 
+                     onClick={() => setKey(k => k + 1)}
+                     className="p-1.5 bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-md transition-colors backdrop-blur-sm"
+                     title="Reload"
+                 >
+                     <RefreshCw size={14} />
+                 </button>
+             </div>
              <iframe 
+                key={key}
                 srcDoc={generateSrcDoc(code)}
-                className="w-full min-h-[500px] border-0 bg-transparent"
+                className="w-full h-full border-0 bg-transparent"
                 sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                 title="React Sandbox"
              />
+             
+             {/* Resize Handle (Only visible if onHeightChange is provided) */}
+             {onHeightChange && (
+                 <div 
+                    onMouseDown={handleMouseDown}
+                    className="absolute bottom-0 left-0 right-0 h-4 bg-gray-800/80 hover:bg-emerald-500/80 cursor-ns-resize flex items-center justify-center transition-all opacity-0 group-hover/frame:opacity-100 z-20 backdrop-blur-sm"
+                    title="Drag to resize"
+                 >
+                    <GripHorizontal size={16} className="text-white/50" />
+                 </div>
+             )}
         </div>
     );
 };

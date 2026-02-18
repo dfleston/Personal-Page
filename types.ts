@@ -1,3 +1,4 @@
+
 export interface GithubUser {
   login: string;
   id: number;
@@ -54,6 +55,7 @@ export interface ArticleCell {
   id: string;
   type: ArticleCellType;
   content: string; // Text content, code, or base64 image data
+  height?: number; // Optional custom height for the cell renderer (pixels)
 }
 
 export interface Article {
