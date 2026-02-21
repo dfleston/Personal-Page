@@ -5,7 +5,7 @@ import { GithubRepo } from "../types.js";
 let _ai: any = null;
 const getAIClient = () => {
   if (_ai) return _ai;
-  const key = typeof process !== 'undefined' ? (process.env.GEMINI_API_KEY || process.env.API_KEY) : '';
+  const key = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
   if (!key) {
     throw new Error("Gemini API key is not configured.");
   }

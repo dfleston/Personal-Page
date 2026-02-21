@@ -22,10 +22,10 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [react()],
     define: {
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GITHUB_USERNAME': JSON.stringify(env.GITHUB_USERNAME),
-      'process.env.NOSTR_NPUB': JSON.stringify(env.NOSTR_NPUB)
+      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || process.env.GEMINI_API_KEY),
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || process.env.GEMINI_API_KEY),
+      'process.env.GITHUB_USERNAME': JSON.stringify(env.GITHUB_USERNAME || process.env.GITHUB_USERNAME),
+      'process.env.NOSTR_NPUB': JSON.stringify(env.NOSTR_NPUB || process.env.NOSTR_NPUB)
     },
     resolve: {
       alias: {

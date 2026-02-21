@@ -9,9 +9,9 @@ import { NostrTab } from './components/NostrTab.js';
 import { WritingsTab } from './components/WritingsTab.js';
 
 // Default NPub from env
-const DEFAULT_NPUB = (typeof process !== 'undefined' && process.env.NOSTR_NPUB) || 'npub1teprpsvpu8px6vqg4f4d7v5wz968yxkpw0yyr0q52m09ng48p2fq0h53xe';
-const GITHUB_USERNAME = (typeof process !== 'undefined' && process.env.GITHUB_USERNAME) || '';
-const AI_ENABLED = !!(typeof process !== 'undefined' && process.env.GEMINI_API_KEY);
+const DEFAULT_NPUB = process.env.NOSTR_NPUB || 'npub1teprpsvpu8px6vqg4f4d7v5wz968yxkpw0yyr0q52m09ng48p2fq0h53xe';
+const GITHUB_USERNAME = process.env.GITHUB_USERNAME || '';
+const AI_ENABLED = !!process.env.GEMINI_API_KEY;
 
 type Tab = 'projects' | 'nostr' | 'writings';
 
