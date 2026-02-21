@@ -113,6 +113,26 @@ Navigate to [http://localhost:3001/#admin](http://localhost:3001/#admin) to acce
 
 ---
 
+## 🛠️ Development Commands
+
+You can run the project in two modes:
+
+| Feature | `npm run dev` | `npm run dev:local` |
+| :--- | :--- | :--- |
+| **Command** | `vite` | `vercel dev` |
+| **Port** | 3000 | 3001 |
+| **Backend** | ❌ None (API calls 404) | ✅ Full Serverless Support |
+| **Articles** | Static fallback (`data/articles.json`) | Live Redis Persistence |
+| **Auth** | ❌ Disabled | ✅ GitHub OAuth enabled |
+
+> [!TIP]
+> Use `npm run dev:local` for the full experience. To sync your remote environment variables (like Redis credentials) to your local machine, run:
+> ```bash
+> vercel env pull .env.development.local
+> ```
+
+---
+
 ## 📁 Project Structure
 
 ```

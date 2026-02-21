@@ -11,6 +11,7 @@ import { WritingsTab } from './components/WritingsTab';
 // Default NPub from env
 const DEFAULT_NPUB = (typeof process !== 'undefined' && process.env.NOSTR_NPUB) || 'npub1teprpsvpu8px6vqg4f4d7v5wz968yxkpw0yyr0q52m09ng48p2fq0h53xe';
 const GITHUB_USERNAME = (typeof process !== 'undefined' && process.env.GITHUB_USERNAME) || '';
+const AI_ENABLED = !!(typeof process !== 'undefined' && process.env.GEMINI_API_KEY);
 
 type Tab = 'projects' | 'nostr' | 'writings';
 
@@ -254,10 +255,12 @@ const App: React.FC = () => {
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                   Repositories
                 </h2>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <Sparkles size={12} className="text-violet-400" />
-                  <span>AI features enabled</span>
-                </div>
+                {AI_ENABLED && (
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <Sparkles size={12} className="text-violet-400" />
+                    <span>AI features enabled</span>
+                  </div>
+                )}
               </div>
 
               {repos.length === 0 ? (
