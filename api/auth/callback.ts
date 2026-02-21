@@ -11,6 +11,11 @@ export default async function handler(
 
     if (!code) return response.status(400).json({ error: 'No code provided' });
 
+    if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+        console.error('Missing GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET');
+        return response.status(500).json({ error: 'OAuth app not configured' });
+    }
+
     try {
         // 1. Exchange code for access token
         const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
@@ -26,21 +31,37 @@ export default async function handler(
             }),
         });
 
-        const tokenData = await tokenResponse.json();
-        const accessToken = tokenData.access_token;
+        const tokenData = await tokenResponse.json() as any;
+        console.log('GitHub token response:', JSON.stringify({
+            ...tokenData,
+            access_token: tokenData.access_token ? '[REDACTED]' : undefined
+        }));
 
+        const accessToken = tokenData.access_token;
         if (!accessToken) {
-            return response.status(401).json({ error: 'Failed to get access token' });
+            return response.status(401).json({
+                error: 'Failed to get access token from GitHub',
+                detail: tokenData.error_description || tokenData.error || 'Unknown error'
+            });
         }
 
         // 2. Get user info from GitHub
         const userResponse = await fetch('https://api.github.com/user', {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
+                'User-Agent': 'gitfolio-app',
             },
         });
 
-        const userData = await userResponse.json();
+        const userData = await userResponse.json() as any;
+        console.log('GitHub user response - status:', userResponse.status, 'login:', userData?.login);
+
+        if (!userData.login) {
+            return response.status(401).json({
+                error: 'Failed to get user info from GitHub',
+                detail: userData.message || 'No login field in response'
+            });
+        }
 
         // 3. Verify user matches the admin username
         if (userData.login.toLowerCase() !== GITHUB_USERNAME?.toLowerCase()) {
@@ -62,7 +83,7 @@ export default async function handler(
         // 5. Set session cookie
         const cookie = serialize('gitfolio_session', sessionToken, {
             httpOnly: true,
-            secure: process.env.NODE_VERSION === 'production',
+            secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
             path: '/',
             maxAge: 60 * 60 * 24 * 7, // 1 week
@@ -74,6 +95,6 @@ export default async function handler(
         return response.redirect('/');
     } catch (error) {
         console.error('Auth Callback Error:', error);
-        return response.status(500).json({ error: 'Authentication failed' });
+        return response.status(500).json({ error: 'Authentication failed', detail: String(error) });
     }
 }

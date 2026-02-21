@@ -1,22 +1,29 @@
-import { Redis } from 'ioredis';
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import jwt from 'jsonwebtoken';
 
 const STORAGE_KEY = 'gitfolio_articles';
 
-// Initialize Redis client
-const redisUrl = process.env.REDIS_URL;
-if (!redisUrl) {
-    console.warn('REDIS_URL is not defined in environment variables');
-}
-const redis = new Redis(redisUrl || 'redis://localhost:6379', {
-    connectTimeout: 2000,      // fail fast
-    maxRetriesPerRequest: 0,   // don't retry on error
-    retryStrategy: () => null, // don't reconnect
-    lazyConnect: true
-});
+// Lazy Redis client — using dynamic import to avoid any top-level ioredis loading
+let _redis: any = null;
+async function getRedis() {
+    if (_redis) return _redis;
 
-redis.on('error', () => { /* suppress logs after first failure */ });
+    // Dynamic import to isolate ioredis
+    const { Redis } = await import('ioredis');
+
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) {
+        console.warn('REDIS_URL is not defined in environment variables');
+    }
+    _redis = new Redis(redisUrl || 'redis://localhost:6379', {
+        connectTimeout: 2000,      // fail fast
+        maxRetriesPerRequest: 0,   // don't retry on error
+        retryStrategy: () => null, // don't reconnect
+        lazyConnect: true
+    });
+    _redis.on('error', () => { /* suppress logs after first failure */ });
+    return _redis;
+}
 
 async function verifyAuth(request: VercelRequest) {
     const token = request.cookies.gitfolio_session;
@@ -35,7 +42,7 @@ export default async function handler(
     try {
         if (request.method === 'GET') {
             try {
-                const data = await redis.get(STORAGE_KEY);
+                const data = await (await getRedis()).get(STORAGE_KEY);
                 const articles = data ? JSON.parse(data) : [];
                 return response.status(200).json(articles);
             } catch (redisErr) {
@@ -53,7 +60,7 @@ export default async function handler(
             const article = request.body;
 
             // Get current list
-            const data = await redis.get(STORAGE_KEY);
+            const data = await (await getRedis()).get(STORAGE_KEY);
             let articles: any[] = data ? JSON.parse(data) : [];
 
             if (!article.id) {
@@ -68,14 +75,14 @@ export default async function handler(
                     }),
                 };
                 articles.unshift(newArticle);
-                await redis.set(STORAGE_KEY, JSON.stringify(articles));
+                await (await getRedis()).set(STORAGE_KEY, JSON.stringify(articles));
                 return response.status(201).json(newArticle);
             } else {
                 // Update existing
                 const index = articles.findIndex((a: any) => a.id === article.id);
                 if (index !== -1) {
                     articles[index] = article;
-                    await redis.set(STORAGE_KEY, JSON.stringify(articles));
+                    await (await getRedis()).set(STORAGE_KEY, JSON.stringify(articles));
                     return response.status(200).json(article);
                 }
                 return response.status(404).json({ error: 'Article not found' });
