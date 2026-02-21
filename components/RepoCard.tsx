@@ -1,5 +1,5 @@
 import React from 'react';
-import { GithubRepo } from '../types';
+import { GithubRepo } from '../types.js';
 import { Star, GitFork, ExternalLink, Globe, Sparkles, Image as ImageIcon, Code, Cpu, Calendar } from 'lucide-react';
 
 interface RepoCardProps {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { fetchArticles, saveArticle } from '../services/articleService';
-import { Article, ArticleCell, ArticleCellType } from '../types';
+import { fetchArticles, saveArticle } from '../services/articleService.js';
+import { Article, ArticleCell, ArticleCellType } from '../types.js';
 import { Loader2, Calendar, Clock, ArrowLeft, Tag, Plus, Edit3, Save, Eye, Code, X, MoveUp, MoveDown, Trash2, Image as ImageIcon, Box, AlertTriangle, RefreshCw, GripHorizontal } from 'lucide-react';
 import { marked } from 'marked';
 

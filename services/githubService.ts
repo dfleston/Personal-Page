@@ -1,4 +1,4 @@
-import { GithubUser, GithubRepo } from '../types';
+import { GithubUser, GithubRepo } from '../types.js';
 
 const BASE_URL = 'https://api.github.com';
 const CACHE_KEY_PREFIX = 'gitfolio_cache_';

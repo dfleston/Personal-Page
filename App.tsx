@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Github, Loader2, Sparkles, FolderKanban, PenTool, MessageSquare } from 'lucide-react';
-import { GithubUser, GithubRepo } from './types';
-import { fetchGithubUser, fetchGithubRepos } from './services/githubService';
-import { generateRepoRationale, generateRepoThumbnail } from './services/geminiService';
-import { ProfileHeader } from './components/ProfileHeader';
-import { RepoCard } from './components/RepoCard';
-import { NostrTab } from './components/NostrTab';
-import { WritingsTab } from './components/WritingsTab';
+import { GithubUser, GithubRepo } from './types.js';
+import { fetchGithubUser, fetchGithubRepos } from './services/githubService.js';
+import { generateRepoRationale, generateRepoThumbnail } from './services/geminiService.js';
+import { ProfileHeader } from './components/ProfileHeader.js';
+import { RepoCard } from './components/RepoCard.js';
+import { NostrTab } from './components/NostrTab.js';
+import { WritingsTab } from './components/WritingsTab.js';
 
 // Default NPub from env
 const DEFAULT_NPUB = (typeof process !== 'undefined' && process.env.NOSTR_NPUB) || 'npub1teprpsvpu8px6vqg4f4d7v5wz968yxkpw0yyr0q52m09ng48p2fq0h53xe';

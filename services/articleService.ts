@@ -1,5 +1,5 @@
-import { Article } from '../types';
-import initialArticles from '../data/articles.json';
+import { Article } from '../types.js';
+import initialArticles from '../data/articles.json' with { type: 'json' };
 
 const STORAGE_KEY = 'gitfolio_articles';
 const API_URL = '/api/articles';

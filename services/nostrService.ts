@@ -1,5 +1,5 @@
 import { nip19 } from 'nostr-tools';
-import { NostrNote } from '../types';
+import { NostrNote } from '../types.js';
 
 // Default relays to try
 const RELAYS = [
@@ -36,12 +36,12 @@ export const fetchNostrNotes = async (npub: string): Promise<NostrNote[]> => {
       ws.onopen = () => {
         // Request Text Notes (Kind 1) for the specific author, limit 20
         const req = [
-          "REQ", 
-          "my-sub", 
-          { 
-            kinds: [1], 
-            authors: [hexPubkey], 
-            limit: 20 
+          "REQ",
+          "my-sub",
+          {
+            kinds: [1],
+            authors: [hexPubkey],
+            limit: 20
           }
         ];
         ws.send(JSON.stringify(req));
@@ -71,11 +71,11 @@ export const fetchNostrNotes = async (npub: string): Promise<NostrNote[]> => {
 
   // Try relays concurrently
   const results = await Promise.all(RELAYS.map(relay => fetchFromRelay(relay)));
-  
+
   // Flatten and deduplicate by ID
   const allNotes = results.flat();
   const uniqueNotesMap = new Map();
-  
+
   allNotes.forEach(note => {
     if (!uniqueNotesMap.has(note.id)) {
       uniqueNotesMap.set(note.id, note);

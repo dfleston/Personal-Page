@@ -1,9 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
-import { GithubRepo } from "../types";
+import { GithubRepo } from "../types.js";
 
-// Initialize the client
-const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : '';
-const ai = new GoogleGenAI({ apiKey });
+// Lazy-initialize the AI client to avoid crashing if the key is missing at startup
+let _ai: any = null;
+const getAIClient = () => {
+  if (_ai) return _ai;
+  const key = typeof process !== 'undefined' ? (process.env.GEMINI_API_KEY || process.env.API_KEY) : '';
+  if (!key) {
+    throw new Error("Gemini API key is not configured.");
+  }
+  _ai = new GoogleGenAI({ apiKey: key });
+  return _ai;
+};
 
 const RATIONALE_MODEL = 'gemini-3-flash-preview';
 const THUMBNAIL_MODEL = 'gemini-2.5-flash-image';
@@ -26,7 +34,7 @@ export const generateRepoRationale = async (repo: GithubRepo): Promise<{ rationa
       Description: ${repo.description || 'No description provided.'}
     `;
 
-    const response = await ai.models.generateContent({
+    const response = await getAIClient().models.generateContent({
       model: RATIONALE_MODEL,
       contents: prompt,
     });
@@ -54,7 +62,7 @@ export const generateRepoThumbnail = async (repo: GithubRepo): Promise<{ imageUr
       Aspect Ratio 16:9.
     `;
 
-    const response = await ai.models.generateContent({
+    const response = await getAIClient().models.generateContent({
       model: THUMBNAIL_MODEL,
       contents: {
         parts: [{ text: prompt }]
@@ -92,7 +100,7 @@ export const generateProfileSummary = async (username: string, repos: GithubRepo
       Use emojis.
     `;
 
-    const response = await ai.models.generateContent({
+    const response = await getAIClient().models.generateContent({
       model: PROFILE_MODEL,
       contents: prompt,
     });
