@@ -1,8 +1,22 @@
-import { kv } from '@vercel/kv';
+import { Redis } from 'ioredis';
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import jwt from 'jsonwebtoken';
 
 const STORAGE_KEY = 'gitfolio_articles';
+
+// Initialize Redis client
+const redisUrl = process.env.REDIS_URL;
+if (!redisUrl) {
+    console.warn('REDIS_URL is not defined in environment variables');
+}
+const redis = new Redis(redisUrl || 'redis://localhost:6379', {
+    connectTimeout: 2000,      // fail fast
+    maxRetriesPerRequest: 0,   // don't retry on error
+    retryStrategy: () => null, // don't reconnect
+    lazyConnect: true
+});
+
+redis.on('error', () => { /* suppress logs after first failure */ });
 
 async function verifyAuth(request: VercelRequest) {
     const token = request.cookies.gitfolio_session;
@@ -20,8 +34,14 @@ export default async function handler(
 ) {
     try {
         if (request.method === 'GET') {
-            const articles = await kv.get(STORAGE_KEY);
-            return response.status(200).json(articles || []);
+            try {
+                const data = await redis.get(STORAGE_KEY);
+                const articles = data ? JSON.parse(data) : [];
+                return response.status(200).json(articles);
+            } catch (redisErr) {
+                console.error('Error fetching articles from Redis:', redisErr);
+                return response.status(200).json([]); // Return empty list rather than hanging/crashing
+            }
         }
 
         if (request.method === 'POST') {
@@ -33,7 +53,8 @@ export default async function handler(
             const article = request.body;
 
             // Get current list
-            let articles: any[] = (await kv.get(STORAGE_KEY)) || [];
+            const data = await redis.get(STORAGE_KEY);
+            let articles: any[] = data ? JSON.parse(data) : [];
 
             if (!article.id) {
                 // Create new
@@ -47,14 +68,14 @@ export default async function handler(
                     }),
                 };
                 articles.unshift(newArticle);
-                await kv.set(STORAGE_KEY, articles);
+                await redis.set(STORAGE_KEY, JSON.stringify(articles));
                 return response.status(201).json(newArticle);
             } else {
                 // Update existing
                 const index = articles.findIndex((a: any) => a.id === article.id);
                 if (index !== -1) {
                     articles[index] = article;
-                    await kv.set(STORAGE_KEY, articles);
+                    await redis.set(STORAGE_KEY, JSON.stringify(articles));
                     return response.status(200).json(article);
                 }
                 return response.status(404).json({ error: 'Article not found' });
@@ -67,3 +88,4 @@ export default async function handler(
         return response.status(500).json({ error: 'Internal server error' });
     }
 }
+

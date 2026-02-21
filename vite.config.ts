@@ -10,13 +10,14 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
     server: {
-      port: 3000,
-      host: '0.0.0.0',
-      proxy: {
-        '/api': {
-          target: 'http://localhost:3001',
-          changeOrigin: true,
-        }
+      headers: {
+        'Content-Security-Policy':
+          "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+          "script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+          "style-src * 'unsafe-inline'; " +
+          "img-src * data: blob:; " +
+          "font-src * data:; " +
+          "connect-src * ws: wss:;"
       }
     },
     plugins: [react()],

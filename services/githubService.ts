@@ -49,14 +49,23 @@ export const fetchGithubUser = async (username: string): Promise<GithubUser> => 
   const cached = getCachedData(`user_${cleanUsername}`);
   if (cached) return cached;
 
-  const response = await fetch(`${BASE_URL}/users/${cleanUsername}`);
-  if (!response.ok) {
-    if (response.status === 404) throw new Error(`User "${cleanUsername}" not found`);
-    throw new Error('Failed to fetch user');
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch(`${BASE_URL}/users/${cleanUsername}`, {
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      if (response.status === 404) throw new Error(`User "${cleanUsername}" not found`);
+      throw new Error('Failed to fetch user');
+    }
+    const data = await response.json();
+    setCachedData(`user_${cleanUsername}`, data);
+    return data;
+  } finally {
+    clearTimeout(timeoutId);
   }
-  const data = await response.json();
-  setCachedData(`user_${cleanUsername}`, data);
-  return data;
 };
 
 export const fetchGithubRepos = async (username: string): Promise<GithubRepo[]> => {
@@ -65,16 +74,25 @@ export const fetchGithubRepos = async (username: string): Promise<GithubRepo[]> 
   const cached = getCachedData(`repos_${cleanUsername}`);
   if (cached) return cached;
 
-  const response = await fetch(`${BASE_URL}/users/${cleanUsername}/repos?sort=updated&per_page=100`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch repositories');
-  }
-  const data = await response.json();
-  const nonForks = data.filter((repo: GithubRepo) => !repo.fork);
-  const result = nonForks.length > 0 ? nonForks : data;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-  setCachedData(`repos_${cleanUsername}`, result);
-  return result;
+  try {
+    const response = await fetch(`${BASE_URL}/users/${cleanUsername}/repos?sort=updated&per_page=100`, {
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch repositories');
+    }
+    const data = await response.json();
+    const nonForks = data.filter((repo: GithubRepo) => !repo.fork);
+    const result = nonForks.length > 0 ? nonForks : data;
+
+    setCachedData(`repos_${cleanUsername}`, result);
+    return result;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 };
 
 export const clearGithubCache = () => {

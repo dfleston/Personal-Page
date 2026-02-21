@@ -7,7 +7,11 @@ export default async function handler(
     const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 
     if (!GITHUB_CLIENT_ID) {
-        return response.status(500).json({ error: 'GITHUB_CLIENT_ID not configured' });
+        console.error('Environment variables missing. Keys:', Object.keys(process.env).filter(k => k.includes('GITHUB') || k.includes('JWT')));
+        return response.status(500).json({
+            error: 'GITHUB_CLIENT_ID not configured',
+            envKeysFound: Object.keys(process.env).filter(k => k.includes('GITHUB') || k.includes('JWT'))
+        });
     }
 
     // Redirect to GitHub OAuth

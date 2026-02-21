@@ -1,66 +1,142 @@
 # 🚀 GitFolio AI
 
-**GitFolio AI** is a modern, AI-powered portfolio generator that transforms any GitHub profile into a stunning, professional showcase. By leveraging **Google Gemini AI**, it provides intelligent rationales for projects and dynamically generates high-quality thumbnails.
+**GitFolio AI** is a personal portfolio platform powered by **Google Gemini AI**. It auto-loads your GitHub profile, generates AI rationales and thumbnails for your projects, surfaces your Nostr notes, and hosts your long-form technical writings — all in one place.
 
-![GitFolio AI Preview](https://github.com/dfleston/gitfolio/raw/main/preview.png)
+> This is a **single-owner portfolio** app. The GitHub username is set via environment variable, not by visitors.
 
 ## ✨ Features
 
--   **Instant Portfolio Generation**: Simply enter a GitHub username or URL.
--   **AI Rationales**: Automatically generates deep insights and technical rationales for each repository using **Gemini 2.0 Flash**.
--   **AI Thumbnails**: Creates beautiful, context-aware thumbnails for your projects using **Gemini 2.0 Pro**.
--   **Nostr Integration**: Automatically pulls and displays your latest notes from the **Nostr** protocol.
--   **Technical Writings**: A dedicated space for long-form articles and technical documentation.
--   **Modern UI**: Built with **React 19**, **Vite**, and **Tailwind CSS** for a blazing fast, glassmorphic experience.
+- **Auto-loaded Profile**: Your GitHub repos load automatically on visit — no search required.
+- **AI Rationales**: Gemini 2.0 Flash generates technical insights per repo.
+- **AI Thumbnails**: Gemini generates beautiful, context-aware project thumbnails.
+- **Nostr Feed**: Pulls your latest Nostr notes directly from relays.
+- **Technical Writings**: Rich notebook-style editor for long-form articles (stored in Redis).
+- **Admin Auth**: Secure GitHub OAuth login — only the repo owner can create/edit articles.
 
 ## 🛠️ Tech Stack
 
--   **Frontend**: React 19, TypeScript, Lucide Icons
--   **Build Tool**: Vite 6
--   **AI Engine**: Google Gemini API (@google/genai)
--   **Social**: Nostr (nostr-tools)
--   **Styling**: Tailwind CSS (Glassmorphism & Dark Mode)
-
-## 🚀 Getting Started
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/dfleston/gitfolio.git
-cd gitfolio
-```
-
-### 2. Install dependencies
-```bash
-npm install
-```
-
-### 3. Configure Environment Variables
-Create a `.env.local` file in the root directory:
-
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-GITHUB_USERNAME=your_username (optional: skip landing page)
-NOSTR_NPUB=your_npub (optional)
-```
-
-### 4. Run the development server
-```bash
-npm run dev
-```
-
-## 📖 Configuration
-
--   **`GITHUB_USERNAME`**: If set, the application will bypass the search screen and load this profile automatically.
--   **`NOSTR_NPUB`**: The public key used to fetch social updates on the Nostr tab.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, TypeScript, Vite 6 |
+| Styling | Tailwind CSS (CDN, dark mode) |
+| AI | Google Gemini API |
+| Social | Nostr (nostr-tools) |
+| Backend | Vercel Serverless Functions |
+| Database | Redis (Upstash recommended) |
+| Auth | GitHub OAuth 2.0 + JWT |
 
 ---
 
-Built with ⚡ by [Your Name/Handle]
+## 🚀 Deploying to Vercel
+
+### 1. Fork and connect
+
+1. Fork this repo to your GitHub account.
+2. Go to [vercel.com](https://vercel.com) → **New Project** → import your fork.
+3. Vercel will auto-detect the Vite framework.
+
+### 2. Set Environment Variables
+
+In Vercel project settings → **Environment Variables**, add:
+
+```env
+# Required
+GEMINI_API_KEY=your_gemini_api_key
+GITHUB_USERNAME=your_github_username
+
+# GitHub OAuth (see below)
+GITHUB_CLIENT_ID=your_oauth_app_client_id
+GITHUB_CLIENT_SECRET=your_oauth_app_client_secret
+JWT_SECRET=a_long_random_string_for_signing_tokens
+
+# Redis (see below)
+REDIS_URL=rediss://default:PASSWORD@endpoint.upstash.io:6380
+
+# Optional
+NOSTR_NPUB=your_nostr_npub
+```
+
+### 3. Set up GitHub OAuth App
+
+1. Go to GitHub → **Settings** → **Developer settings** → **OAuth Apps** → **New OAuth App**.
+2. Set **Homepage URL** to your Vercel deployment URL (e.g. `https://yourproject.vercel.app`).
+3. Set **Authorization callback URL** to `https://yourproject.vercel.app/api/auth/callback`.
+4. Copy the **Client ID** and generate a **Client Secret**.
+
+### 4. Set up Redis (Upstash)
+
+1. Go to [upstash.com](https://upstash.com) → create a free Redis database.
+2. On the database page, copy the **Redis URL** (starts with `rediss://`).
+3. Add it to Vercel as `REDIS_URL`.
+
+### 5. Deploy
+
+Click **Deploy** in Vercel. Your portfolio will be live at your Vercel URL.
+
+---
+
+## 💻 Local Development
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/YOUR_USERNAME/gitfolio.git
+cd gitfolio
+npm install
+```
+
+### 2. Create `.env.local`
+
+```env
+GEMINI_API_KEY=your_key
+GITHUB_USERNAME=your_github_username
+GITHUB_CLIENT_ID=your_oauth_client_id
+GITHUB_CLIENT_SECRET=your_oauth_client_secret
+JWT_SECRET=any_random_string
+REDIS_URL=rediss://default:PASSWORD@endpoint.upstash.io:6380
+NOSTR_NPUB=your_npub
+```
+
+> For local OAuth to work, create a **separate** GitHub OAuth App with callback URL: `http://localhost:3001/api/auth/callback`
+
+### 3. Run the dev server
+
+```bash
+npm run dev:local
+```
+
+Open [http://localhost:3001](http://localhost:3001).
+
+### 4. Admin access (local)
+
+Navigate to [http://localhost:3001/#admin](http://localhost:3001/#admin) to access the login page.
+
+---
+
+## 📁 Project Structure
+
+```
+├── api/                  # Vercel Serverless Functions
+│   ├── articles.ts       # Articles CRUD (Redis)
+│   └── auth/
+│       ├── login.ts      # GitHub OAuth redirect
+│       ├── callback.ts   # OAuth token exchange
+│       ├── logout.ts     # Session clear
+│       └── me.ts         # Session check
+├── components/
+│   ├── WritingsTab.tsx   # Article notebook editor + viewer
+│   ├── NostrTab.tsx      # Nostr notes feed
+│   ├── ProfileHeader.tsx # GitHub profile banner
+│   └── RepoCard.tsx      # Repository card with AI features
+├── services/
+│   ├── geminiService.ts  # Gemini AI integration
+│   ├── githubService.ts  # GitHub API with caching
+│   └── articleService.ts # Articles API client
+├── App.tsx               # Main app, routing, auth state
+├── index.html            # Entry point
+└── vercel.json           # Vercel routing + CSP headers
+```
+
+---
+
+Built with ⚡ by [dfleston](https://github.com/dfleston)

@@ -11,6 +11,7 @@ export const WritingsTab: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'list' | 'view' | 'edit'>('list');
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadData();
@@ -23,11 +24,20 @@ export const WritingsTab: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     setLoading(false);
   };
 
+  const scrollToTop = () => {
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const handleArticleClick = (article: Article) => {
     setSelectedArticle(article);
     setViewMode('view');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToTop();
   };
+
 
   const handleCreateNew = () => {
     setSelectedArticle({
@@ -82,7 +92,7 @@ export const WritingsTab: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
 
   if (viewMode === 'view' && selectedArticle) {
     return (
-      <div className="animate-fade-in">
+      <div ref={containerRef} className="animate-fade-in">
         <div className="flex items-center justify-between mb-8">
           <button onClick={handleBack} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group">
             <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
@@ -101,7 +111,7 @@ export const WritingsTab: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div ref={containerRef} className="space-y-6">
       {isAdmin && (
         <div className="flex justify-end">
           <button onClick={handleCreateNew} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-500/20">
@@ -295,9 +305,9 @@ const CellEditor: React.FC<{
       <div className="bg-gray-850 border-b border-gray-700/50 p-2 pl-4 flex items-center justify-between opacity-50 group-hover:opacity-100 transition-opacity">
         <div className="flex items-center gap-3">
           <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded tracking-wider ${cell.type === 'jsx' ? 'bg-violet-900/50 text-violet-300' :
-              cell.type === 'html' ? 'bg-orange-900/50 text-orange-300' :
-                cell.type === 'image' ? 'bg-pink-900/50 text-pink-300' :
-                  'bg-blue-900/50 text-blue-300'
+            cell.type === 'html' ? 'bg-orange-900/50 text-orange-300' :
+              cell.type === 'image' ? 'bg-pink-900/50 text-pink-300' :
+                'bg-blue-900/50 text-blue-300'
             }`}>
             {cell.type}
           </span>

@@ -15,7 +15,7 @@
     ],
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "isolatedModules": true,
     "moduleDetection": "force",
     "allowJs": true,
@@ -25,7 +25,7 @@
         "./*"
       ]
     },
-    "allowImportingTsExtensions": true,
+    // "allowImportingTsExtensions": true,
     "noEmit": true
   }
 }
