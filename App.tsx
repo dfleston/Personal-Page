@@ -80,8 +80,25 @@ const App: React.FC = () => {
   const [repos, setRepos] = useState<GithubRepo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>('projects');
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const defaultHash = window.location.hash;
+    if (defaultHash.startsWith('#writings')) return 'writings';
+    if (defaultHash.startsWith('#nostr')) return 'nostr';
+    return 'projects';
+  });
   const [adminUser, setAdminUser] = useState<any>(null);
+
+  // Sync tab clicks to hash
+  const switchTab = (tab: Tab) => {
+    setActiveTab(tab);
+    window.location.hash = `#${tab}`;
+  };
+
+  useEffect(() => {
+    if (hash.startsWith('#writings')) setActiveTab('writings');
+    else if (hash.startsWith('#nostr')) setActiveTab('nostr');
+    else if (hash === '#projects' || hash === '') setActiveTab('projects');
+  }, [hash]);
 
   // Check auth session on mount
   useEffect(() => {
@@ -212,7 +229,7 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center gap-6 mb-8 border-b border-gray-800 overflow-x-auto">
           <button
-            onClick={() => setActiveTab('projects')}
+            onClick={() => switchTab('projects')}
             className={`flex items-center gap-2 pb-3 px-1 transition-all duration-300 whitespace-nowrap ${activeTab === 'projects'
               ? 'text-cyan-400 border-b-2 border-cyan-400 font-medium'
               : 'text-gray-400 hover:text-white'
@@ -226,7 +243,7 @@ const App: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('nostr')}
+            onClick={() => switchTab('nostr')}
             className={`flex items-center gap-2 pb-3 px-1 transition-all duration-300 whitespace-nowrap ${activeTab === 'nostr'
               ? 'text-violet-400 border-b-2 border-violet-400 font-medium'
               : 'text-gray-400 hover:text-white'
@@ -237,14 +254,14 @@ const App: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('writings')}
+            onClick={() => switchTab('writings')}
             className={`flex items-center gap-2 pb-3 px-1 transition-all duration-300 whitespace-nowrap ${activeTab === 'writings'
               ? 'text-emerald-400 border-b-2 border-emerald-400 font-medium'
               : 'text-gray-400 hover:text-white'
               }`}
           >
             <PenTool size={18} />
-            Writings
+            Digital Garden
           </button>
         </div>
 
@@ -284,18 +301,24 @@ const App: React.FC = () => {
 
           {activeTab === 'nostr' && (
             <div className="animate-fade-in">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-2">
                 Nostr Notes
               </h2>
+              <p className="text-gray-400 text-sm mb-6 max-w-3xl leading-relaxed">
+                Nostr is a non-censorship, sovereign, and open way to publish and maintain a network. There are no platforms, only protocols, ensuring freedom of speech and data ownership.
+              </p>
               <NostrTab npub={DEFAULT_NPUB} />
             </div>
           )}
 
           {activeTab === 'writings' && (
             <div className="animate-fade-in">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6">
-                Long-form Articles
+              <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-2">
+                Digital Garden
               </h2>
+              <p className="text-gray-400 text-sm mb-6 max-w-3xl leading-relaxed">
+                A digital garden is an evolving space where ideas are planted, cultivated, and grown over time. It's a collection of notes, drafts, and thoughts in various stages of refinement. For more long form finished text, we refer to <a href="https://dleston.substack.com/" target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">https://dleston.substack.com/</a>.
+              </p>
               <WritingsTab isAdmin={!!adminUser?.isAdmin} />
             </div>
           )}

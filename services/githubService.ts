@@ -1,4 +1,5 @@
 import { GithubUser, GithubRepo } from '../types.js';
+import repoOverrides from '../data/repoOverrides.json' with { type: "json" };
 
 const BASE_URL = 'https://api.github.com';
 const CACHE_KEY_PREFIX = 'gitfolio_cache_';
@@ -71,8 +72,16 @@ export const fetchGithubUser = async (username: string): Promise<GithubUser> => 
 export const fetchGithubRepos = async (username: string): Promise<GithubRepo[]> => {
   const cleanUsername = extractUsername(username);
 
+  const applyOverrides = (repos: GithubRepo[]) => repos.map((repo: GithubRepo) => {
+    const overrideKey = repo.name as keyof typeof repoOverrides;
+    if (repoOverrides[overrideKey]) {
+      return { ...repo, description: repoOverrides[overrideKey] };
+    }
+    return repo;
+  });
+
   const cached = getCachedData(`repos_${cleanUsername}`);
-  if (cached) return cached;
+  if (cached) return applyOverrides(cached);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -89,7 +98,7 @@ export const fetchGithubRepos = async (username: string): Promise<GithubRepo[]> 
     const result = nonForks.length > 0 ? nonForks : data;
 
     setCachedData(`repos_${cleanUsername}`, result);
-    return result;
+    return applyOverrides(result);
   } finally {
     clearTimeout(timeoutId);
   }

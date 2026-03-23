@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { fetchArticles, saveArticle } from '../services/articleService.js';
 import { Article, ArticleCell, ArticleCellType } from '../types.js';
-import { Loader2, Calendar, Clock, ArrowLeft, Tag, Plus, Edit3, Save, Eye, Code, X, MoveUp, MoveDown, Trash2, Image as ImageIcon, Box, AlertTriangle, RefreshCw, GripHorizontal } from 'lucide-react';
+import { Loader2, Calendar, Clock, ArrowLeft, Tag, Plus, Edit3, Save, Eye, Code, X, MoveUp, MoveDown, Trash2, Image as ImageIcon, Box, AlertTriangle, RefreshCw, GripHorizontal, Table } from 'lucide-react';
 import { marked } from 'marked';
 
 // --- Main Tab Component ---
@@ -21,6 +21,18 @@ export const WritingsTab: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
     setLoading(true);
     const data = await fetchArticles();
     setArticles(data);
+
+    // Check hash for specific article
+    const hash = window.location.hash;
+    if (hash.startsWith('#writings/')) {
+      const articleId = hash.replace('#writings/', '');
+      const article = data.find(a => a.id === articleId);
+      if (article) {
+        setSelectedArticle(article);
+        setViewMode('view');
+      }
+    }
+
     setLoading(false);
   };
 
@@ -35,6 +47,7 @@ export const WritingsTab: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const handleArticleClick = (article: Article) => {
     setSelectedArticle(article);
     setViewMode('view');
+    window.location.hash = `#writings/${article.id}`;
     scrollToTop();
   };
 
@@ -69,6 +82,7 @@ export const WritingsTab: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
   const handleBack = () => {
     setViewMode('list');
     setSelectedArticle(null);
+    window.location.hash = '#writings';
   };
 
   if (loading) {
@@ -121,33 +135,60 @@ export const WritingsTab: React.FC<{ isAdmin?: boolean }> = ({ isAdmin }) => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6">
-        {articles.map((article) => (
-          <div key={article.id} onClick={() => handleArticleClick(article)} className="group bg-gray-800 border border-gray-700 rounded-xl p-8 hover:border-emerald-500/50 transition-all duration-300 cursor-pointer relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-emerald-500/10 transition-colors"></div>
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="px-3 py-1 rounded-full text-xs font-bold border bg-blue-900/30 text-blue-300 border-blue-700/50">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        {articles.map((article) => {
+          const firstImageCell = article.cells.find(c => c.type === 'image' && c.content);
+          const imageUrl = firstImageCell ? firstImageCell.content : null;
+
+          return (
+            <div 
+              key={article.id} 
+              onClick={() => handleArticleClick(article)} 
+              className="bg-gray-800 rounded-xl overflow-hidden border border-gray-700/50 hover:border-emerald-500/50 transition-all cursor-pointer group flex flex-col h-full shadow-lg shadow-black/20"
+            >
+              <div className="relative h-48 overflow-hidden bg-gray-900 border-b border-gray-700/50">
+                {imageUrl ? (
+                  <img src={imageUrl} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-emerald-500/20 transition-colors"></div>
+                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 group-hover:bg-blue-500/20 transition-colors"></div>
+                    <Tag size={48} className="text-gray-700 opacity-50 group-hover:scale-110 transition-transform duration-500" />
+                  </div>
+                )}
+                
+                <div className="absolute top-4 right-4 px-2 py-1 rounded bg-black/60 backdrop-blur-md text-xs font-bold border border-emerald-500/30 text-emerald-300">
                   {article.cells.length} Cells
-                </span>
-                <span className="text-gray-500 text-xs flex items-center gap-1">
-                  <Calendar size={12} /> {article.publishedAt}
-                </span>
+                </div>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-emerald-400 transition-colors">
-                {article.title}
-              </h3>
-              <p className="text-gray-400 leading-relaxed mb-6 max-w-2xl">
-                {article.excerpt}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {article.tags.map(tag => (
-                  <span key={tag} className="text-xs font-mono text-gray-500 bg-gray-900/50 px-2 py-1 rounded">#{tag}</span>
-                ))}
+
+              <div className="p-6 flex flex-col flex-1 relative z-10">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-gray-500 text-xs flex items-center gap-1">
+                    <Calendar size={12} /> {article.publishedAt}
+                  </span>
+                  <span className="text-gray-500 text-xs flex items-center gap-1">
+                    <Clock size={12} /> {article.readTime}
+                  </span>
+                </div>
+                
+                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2">
+                  {article.title}
+                </h3>
+                
+                <p className="text-gray-400 text-sm leading-relaxed mb-4 flex-1 line-clamp-3">
+                  {article.excerpt}
+                </p>
+                
+                <div className="flex flex-wrap gap-2 mt-auto pt-4 border-t border-gray-700/30">
+                  {article.tags.map(tag => (
+                    <span key={tag} className="text-[10px] font-mono font-bold text-gray-500 bg-gray-900/50 px-2 py-0.5 rounded border border-gray-700">#{tag}</span>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -307,7 +348,8 @@ const CellEditor: React.FC<{
           <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded tracking-wider ${cell.type === 'jsx' ? 'bg-violet-900/50 text-violet-300' :
             cell.type === 'html' ? 'bg-orange-900/50 text-orange-300' :
               cell.type === 'image' ? 'bg-pink-900/50 text-pink-300' :
-                'bg-blue-900/50 text-blue-300'
+                cell.type === 'table' ? 'bg-emerald-900/50 text-emerald-300' :
+                  'bg-blue-900/50 text-blue-300'
             }`}>
             {cell.type}
           </span>
@@ -372,7 +414,8 @@ const CellEditor: React.FC<{
               placeholder={
                 cell.type === 'jsx' ? "// Write React code here. Must export default a component." :
                   cell.type === 'html' ? "<!-- HTML Content -->" :
-                    "Markdown text..."
+                    cell.type === 'table' ? "Column 1, Column 2, Column 3\nValue 1, Value 2, Value 3" :
+                      "Markdown text..."
               }
             />
           )
@@ -398,6 +441,9 @@ const AddCellDivider: React.FC<{ onAdd: (type: ArticleCellType) => void; alwaysV
         </button>
         <button onClick={() => onAdd('html')} className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-900 border border-gray-700 rounded-full text-xs font-bold text-gray-400 hover:text-white hover:border-orange-500 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-all">
           <Box size={14} className="text-orange-500" /> HTML
+        </button>
+        <button onClick={() => onAdd('table')} className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-900 border border-gray-700 rounded-full text-xs font-bold text-gray-400 hover:text-white hover:border-emerald-500 hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">
+          <Table size={14} className="text-emerald-500" /> Table
         </button>
       </div>
     </div>
@@ -473,9 +519,58 @@ const CellRenderer: React.FC<{ cell: ArticleCell; onHeightChange?: (h: number) =
     return <div ref={contentRef} className="w-full overflow-hidden" dangerouslySetInnerHTML={{ __html: cell.content }} />;
   }
 
+  if (cell.type === 'table') {
+    return <TableRenderer csv={cell.content} />;
+  }
+
   // Markdown
   return (
     <div className="prose prose-invert prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: marked.parse(cell.content) as string }} />
+  );
+};
+
+const TableRenderer: React.FC<{ csv: string }> = ({ csv }) => {
+  const parseCSV = (text: string) => {
+    const lines = text.trim().split('\n');
+    if (lines.length === 0) return [];
+    return lines.map(line => {
+      // Basic CSV parsing (splitting by comma, handling potential quotes could be added later if needed)
+      // For now, let's keep it simple as requested
+      return line.split(',').map(cell => cell.trim());
+    });
+  };
+
+  const rows = parseCSV(csv);
+  if (rows.length === 0) return null;
+
+  const headers = rows[0];
+  const body = rows.slice(1);
+
+  return (
+    <div className="my-8 overflow-x-auto rounded-xl border border-gray-700 bg-gray-800/50 backdrop-blur-sm shadow-xl">
+      <table className="w-full text-left border-collapse">
+        <thead>
+          <tr className="bg-emerald-500/10 border-b border-gray-700">
+            {headers.map((header, i) => (
+              <th key={i} className="px-6 py-4 text-sm font-bold text-emerald-400 uppercase tracking-wider">
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-700/50">
+          {body.map((row, i) => (
+            <tr key={i} className="hover:bg-gray-700/30 transition-colors">
+              {row.map((cell, j) => (
+                <td key={j} className="px-6 py-4 text-sm text-gray-300">
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 
@@ -509,8 +604,8 @@ const JSXRenderer: React.FC<{ code: string; height?: number; onHeightChange?: (h
   // Clean code to remove imports/exports which break the browser script environment
   const cleanUserCode = (rawCode: string) => {
     let clean = rawCode
-      .replace(/^import\s+.*?from\s+['"].*?['"];?/gm, '')
-      .replace(/^export\s+default\s+/gm, '');
+      .replace(/^\s*import\s+[\s\S]*?from\s+['"].*?['"];?/gm, '')
+      .replace(/^\s*export\s+default\s+/gm, '');
     return clean;
   };
 

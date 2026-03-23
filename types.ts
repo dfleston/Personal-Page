@@ -49,7 +49,7 @@ export interface NostrNote {
   pubkey: string;
 }
 
-export type ArticleCellType = 'markdown' | 'html' | 'jsx' | 'image';
+export type ArticleCellType = 'markdown' | 'html' | 'jsx' | 'image' | 'table';
 
 export interface ArticleCell {
   id: string;
